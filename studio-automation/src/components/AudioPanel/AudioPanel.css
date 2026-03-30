@@ -1,0 +1,85 @@
+.audio-panel {
+  flex: 1;
+  background: var(--bg-panel);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.audio-channels {
+  flex: 1;
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  padding: 8px 14px 8px;
+  overflow-x: auto;
+  min-height: 0;
+}
+
+.audio-channel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.audio-channel.muted { opacity: 0.5; }
+
+.audio-fader-wrap {
+  display: flex;
+  gap: 4px;
+  align-items: flex-end;
+  height: 120px;
+}
+
+.audio-meter {
+  width: 8px;
+  height: 120px;
+  background: var(--bg-primary);
+  border-radius: 3px;
+  overflow: hidden;
+  display: flex;
+  align-items: flex-end;
+}
+
+.audio-meter-fill {
+  width: 100%;
+  background: linear-gradient(to top, var(--accent-green) 0%, var(--accent-amber) 70%, var(--accent-red) 90%);
+  border-radius: 3px;
+  transition: height 0.15s ease;
+  min-height: 2px;
+}
+
+/* Vertical range input */
+input[type='range'].audio-fader {
+  writing-mode: vertical-lr;
+  direction: rtl;
+  appearance: slider-vertical;
+  width: 20px;
+  height: 120px;
+  cursor: pointer;
+  accent-color: var(--accent-blue);
+}
+
+.mute-btn {
+  width: 26px;
+  height: 18px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  border-radius: var(--radius-sm);
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.mute-btn.active { background: var(--accent-red); border-color: var(--accent-red); color: #fff; }
+
+.audio-label {
+  font-size: 9px;
+  color: var(--text-muted);
+  text-align: center;
+  max-width: 44px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

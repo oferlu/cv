@@ -1,0 +1,7 @@
+.bottom-panels {
+  display: flex;
+  flex-shrink: 0;
+  height: 200px;
+  border-top: 2px solid var(--border);
+  overflow: hidden;
+}

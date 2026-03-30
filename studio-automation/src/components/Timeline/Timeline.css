@@ -1,0 +1,143 @@
+.timeline {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: var(--bg-surface);
+  border-bottom: 2px solid var(--border);
+  position: relative;
+}
+
+/* ── Ruler ────────────────────────────────────────────────────────────────── */
+.tl-ruler-row {
+  display: flex;
+  height: 20px;
+  background: var(--bg-primary);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.tl-ruler {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+}
+
+.tl-ruler-mark {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+  font-size: 10px;
+  color: var(--text-dim);
+  white-space: nowrap;
+  padding-top: 3px;
+}
+.tl-ruler-mark::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 1px;
+  height: 5px;
+  background: var(--border);
+}
+
+/* ── Track row ────────────────────────────────────────────────────────────── */
+.tl-row {
+  display: flex;
+  height: 36px;
+  border-bottom: 1px solid var(--border);
+}
+.tl-row:hover { background: rgba(255,255,255,0.02); }
+
+.tl-track-label {
+  width: 120px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 6px;
+  border-right: 1px solid var(--border);
+  background: var(--bg-panel);
+}
+
+.tl-track-controls {
+  display: flex;
+  gap: 2px;
+}
+
+.tl-ctrl {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: 9px;
+  padding: 2px;
+  border-radius: 2px;
+  line-height: 1;
+}
+.tl-ctrl:hover { color: var(--text-primary); background: var(--border); }
+
+.tl-track-name {
+  font-size: 10px;
+  color: var(--text-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+/* ── Track body / blocks ──────────────────────────────────────────────────── */
+.tl-track-body {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+}
+
+.tl-block {
+  position: absolute;
+  top: 3px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  transition: filter 0.1s, outline 0.1s;
+}
+.tl-block:hover { filter: brightness(1.2); }
+.tl-block.active { outline: 2px solid var(--accent-amber); outline-offset: 1px; }
+
+.tl-block-rundown { color: rgba(255,255,255,0.9); }
+.tl-block-overlay { background: var(--accent-green); color: #000; left: 34%; width: 12%; }
+.tl-block-audio   { background: #1a4a1a; top: 8px; height: 18px; border-radius: 2px; }
+.tl-block-graphic { background: #1a1a4a; border: 1px dashed var(--accent-blue); color: var(--accent-blue); font-size: 10px; left: 12%; width: 80%; }
+.tl-block-script  { background: #3a2a4a; color: #c8a0f0; font-size: 10px; }
+
+/* ── Playhead ─────────────────────────────────────────────────────────────── */
+.tl-playhead {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--accent-red);
+  pointer-events: none;
+  z-index: 20;
+}
+.tl-playhead::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -4px;
+  width: 10px;
+  height: 10px;
+  background: var(--accent-red);
+  clip-path: polygon(50% 100%, 0 0, 100% 0);
+}
