@@ -37,12 +37,17 @@ export function usePlayback() {
 
     // ── vMix commands ────────────────────────────────────────────────────────
     if (window.studioAPI?.vmix && asset.vmixKey) {
+      // For list items: select the specific index in the list first
+      if (asset.listIndex !== undefined) {
+        window.studioAPI.vmix.send(`SelectIndex&Value=${asset.listIndex}&Input=${asset.vmixKey}`);
+      }
+
       if (!opts.skipPGM) {
         // Direct cut to PGM (no transition — manual continue or first asset)
         window.studioAPI.vmix.send(`ActiveInput&Input=${asset.vmixKey}`);
       }
 
-      // For video clips: send Play so vMix actually starts the clip
+      // For video clips (and list items): send Play so vMix starts the clip
       if (asset.assetType === 'clip') {
         const playDelay = opts.skipPGM ? (asset.transitionDuration || 0) : 0;
         setTimeout(

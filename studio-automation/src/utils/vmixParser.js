@@ -9,20 +9,52 @@
 export function parseVmixXML(xml) {
   try {
     const parser = new DOMParser();
-    const doc = parser.parseFromString(xml, 'text/xml');
-    return Array.from(doc.querySelectorAll('input')).map((el) => ({
-      key:        el.getAttribute('key') || el.getAttribute('number'),
-      number:     parseInt(el.getAttribute('number'), 10),
-      title:      el.getAttribute('title') || el.textContent.trim(),
-      shortTitle: el.getAttribute('shortTitle') || el.getAttribute('title'),
-      type:       el.getAttribute('type') || 'Camera',
-      durationMs: parseInt(el.getAttribute('duration'), 10) || 0,
-      state:      el.getAttribute('state') || 'Running',
-    }));
+    const doc    = parser.parseFromString(xml, 'text/xml');
+    const results = [];
+
+    Array.from(doc.querySelectorAll('input')).forEach((el) => {
+      const type      = el.getAttribute('type') || 'Camera';
+      const inputKey  = el.getAttribute('key') || el.getAttribute('number');
+      const title     = el.getAttribute('title') || el.textContent.trim();
+      const number    = parseInt(el.getAttribute('number'), 10);
+
+      results.push({
+        key:        inputKey,
+        number,
+        title,
+        shortTitle: el.getAttribute('shortTitle') || title,
+        type,
+        durationMs: parseInt(el.getAttribute('duration'), 10) || 0,
+        state:      el.getAttribute('state') || 'Running',
+      });
+
+      // Expand List inputs — expose each item as an individual Media clip
+      if (type === 'List') {
+        Array.from(el.querySelectorAll('item')).forEach((item, idx) => {
+          const filename  = item.getAttribute('filename') || item.getAttribute('name') || `Item ${idx + 1}`;
+          const shortName = filename.split(/[\\/]/).pop(); // keep basename only
+          results.push({
+            key:        `${inputKey}_item_${idx}`,
+            number,
+            title:      shortName,
+            shortTitle: shortName,
+            type:       'Video',   // list items are video clips
+            durationMs: parseInt(item.getAttribute('duration'), 10) || 0,
+            state:      'Paused',
+            isListItem: true,
+            listKey:    inputKey,  // parent list input key
+            listIndex:  idx,
+          });
+        });
+      }
+    });
+
+    return results;
   } catch {
     return [];
   }
 }
+
 
 // Map vMix input type → our category
 const CAMERA_TYPES  = new Set(['Camera', 'NDI', 'Capture', 'Stream', 'VirtualSet', 'Mix', 'Colour']);
@@ -53,8 +85,14 @@ export const MOCK_INPUTS = [
   { key: '5', number: 5, title: 'main_talk.mp4', shortTitle: 'talk', type: 'Video',  durationMs: 180000 },
   { key: '6', number: 6, title: 'b_roll.mp4',  shortTitle: 'broll', type: 'Video',   durationMs: 65000 },
   { key: '7', number: 7, title: 'bg_music.mp3', shortTitle: 'BGM',  type: 'Audio',   durationMs: 0 },
-  { key: '8', number: 8, title: 'Lower Third', shortTitle: 'L3',   type: 'Title',   durationMs: 0 },
-  { key: '9', number: 9, title: 'Slide 01.png', shortTitle: 'Slide',type: 'Image',   durationMs: 0 },
+  { key: '8', number: 8, title: 'Lower Third',  shortTitle: 'L3',    type: 'Title', durationMs: 0 },
+  { key: '9', number: 9, title: 'Slide 01.png', shortTitle: 'Slide', type: 'Image', durationMs: 0 },
+  // Mock List input
+  { key: 'L1', number: 10, title: 'Playlist',   shortTitle: 'Playlist', type: 'List', durationMs: 0 },
+  // Mock list items (expanded from the List input)
+  { key: 'L1_item_0', number: 10, title: 'bumper_open.mp4',  shortTitle: 'bumper_open',  type: 'Video', durationMs: 8000,  isListItem: true, listKey: 'L1', listIndex: 0 },
+  { key: 'L1_item_1', number: 10, title: 'segment_a.mp4',    shortTitle: 'segment_a',    type: 'Video', durationMs: 45000, isListItem: true, listKey: 'L1', listIndex: 1 },
+  { key: 'L1_item_2', number: 10, title: 'bumper_close.mp4', shortTitle: 'bumper_close', type: 'Video', durationMs: 6000,  isListItem: true, listKey: 'L1', listIndex: 2 },
 ];
 
 // ── Transitions ─────────────────────────────────────────────────────────────

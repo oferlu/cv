@@ -97,49 +97,68 @@ export default function AssetBlock({ asset, trackId, isActive, playheadPct }) {
 // ── Gap marker between assets — with transition dropdown ──────────────────
 export function GapMarker({ trackId, nextAsset, onDrop }) {
   const { vmixTransitions, updateAssetTransition } = useStore();
-  const [over,  setOver]  = React.useState(false);
-  const [open,  setOpen]  = React.useState(false);
-  const [durVal, setDurVal] = React.useState(nextAsset?.transitionDuration ?? 500);
-  const ref = React.useRef(null);
+  const [over,    setOver]    = React.useState(false);
+  const [open,    setOpen]    = React.useState(false);
+  const [dropPos, setDropPos] = React.useState({ top: 0, left: 0 });
+  const [durVal,  setDurVal]  = React.useState(nextAsset?.transitionDuration ?? 500);
+  const btnRef = React.useRef(null);
+  const ddRef  = React.useRef(null);
 
-  const transition = nextAsset?.transition ?? null; // null = pause
+  const transition = nextAsset?.transition ?? null;
 
-  // Close dropdown on outside click
+  // Close on outside click
   React.useEffect(() => {
     if (!open) return;
-    const handler = (e) => { if (!ref.current?.contains(e.target)) setOpen(false); };
+    const handler = (e) => {
+      if (!btnRef.current?.contains(e.target) && !ddRef.current?.contains(e.target))
+        setOpen(false);
+    };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, [open]);
+
+  const handleOpen = () => {
+    // Calculate fixed position from button rect — escapes overflow:hidden parent
+    const rect = btnRef.current.getBoundingClientRect();
+    setDropPos({ top: rect.bottom + 6, left: rect.left + rect.width / 2 });
+    setOpen((o) => !o);
+  };
 
   const setTransition = (effect, dur) => {
     updateAssetTransition(trackId, nextAsset.id, effect, dur ?? durVal);
     if (effect) setDurVal(dur ?? durVal);
   };
 
-  const transitions = vmixTransitions.length ? vmixTransitions : [];
-
   return (
     <div
-      ref={ref}
       className={`gap-marker ${over ? 'over' : ''} ${transition ? 'has-transition' : ''}`}
       onDragOver={(e) => { e.preventDefault(); setOver(true); }}
       onDragLeave={() => setOver(false)}
       onDrop={(e) => { e.preventDefault(); setOver(false); onDrop(e); }}
     >
       <button
+        ref={btnRef}
         className="gap-btn"
-        onClick={() => setOpen((o) => !o)}
-        title={transition ? `Transition: ${transition} (${durVal}ms) — click to change` : 'Pause — click to set transition'}
+        onClick={handleOpen}
+        title={transition
+          ? `Transition: ${transition} ${transition !== 'Cut' ? `(${durVal}ms)` : ''} — click to change`
+          : 'Pause — click to set transition'}
       >
-        {transition ? <span className="gap-fx">{transition.replace('Reverse','↩').substring(0,6)}</span> : '⏸'}
+        {transition
+          ? <span className="gap-fx">{transition.replace('Reverse', '↩').substring(0, 6)}</span>
+          : '⏸'}
       </button>
 
+      {/* Dropdown rendered at fixed position — not clipped by track-body overflow */}
       {open && (
-        <div className="gap-dropdown" onClick={(e) => e.stopPropagation()}>
+        <div
+          ref={ddRef}
+          className="gap-dropdown"
+          style={{ top: dropPos.top, left: dropPos.left }}
+          onClick={(e) => e.stopPropagation()}
+        >
           <div className="gap-dd-title">Gap / Transition</div>
 
-          {/* Pause option */}
           <button
             className={`gap-dd-item ${!transition ? 'active' : ''}`}
             onClick={() => { setTransition(null, 0); setOpen(false); }}
@@ -150,9 +169,8 @@ export function GapMarker({ trackId, nextAsset, onDrop }) {
 
           <div className="gap-dd-sep">Auto transition →</div>
 
-          {/* Transition list */}
           <div className="gap-dd-list">
-            {transitions.map((t) => (
+            {vmixTransitions.map((t) => (
               <button
                 key={t.effect}
                 className={`gap-dd-item ${transition === t.effect ? 'active' : ''}`}
@@ -160,12 +178,11 @@ export function GapMarker({ trackId, nextAsset, onDrop }) {
               >
                 <span className="gap-dd-icon">▶</span>
                 <span>{t.label}</span>
-                <span className="gap-dd-dur">{t.defaultDuration}ms</span>
+                {t.defaultDuration > 0 && <span className="gap-dd-dur">{t.defaultDuration}ms</span>}
               </button>
             ))}
           </div>
 
-          {/* Duration override (shown when a transition is selected) */}
           {transition && transition !== 'Cut' && (
             <div className="gap-dd-duration">
               <label>
@@ -175,7 +192,7 @@ export function GapMarker({ trackId, nextAsset, onDrop }) {
                   value={durVal}
                   min="0" max="5000" step="100"
                   onChange={(e) => {
-                    const v = parseInt(e.target.value, 10);
+                    const v = parseInt(e.target.value, 10) || 0;
                     setDurVal(v);
                     updateAssetTransition(trackId, nextAsset.id, transition, v);
                   }}

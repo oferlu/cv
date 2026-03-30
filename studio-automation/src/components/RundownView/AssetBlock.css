@@ -121,11 +121,9 @@
 
 /* ── Dropdown ────────────────────────────────────────────────────────────── */
 .gap-dropdown {
-  position: absolute;
-  top: calc(100% + 4px);
-  left: 50%;
+  position: fixed;           /* fixed escapes overflow:hidden on track-body */
   transform: translateX(-50%);
-  z-index: 200;
+  z-index: 9999;             /* above everything */
   background: var(--bg-panel);
   border: 1px solid var(--border);
   border-radius: var(--radius-md);

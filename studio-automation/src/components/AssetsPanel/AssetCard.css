@@ -16,6 +16,18 @@
 .asset-card--clip         { border-left-color: var(--accent-green); }
 .asset-card--graphic      { border-left-color: var(--accent-amber); }
 .asset-card--audio        { border-left-color: var(--accent-purple); }
+.asset-card--list         { border-left-color: var(--text-dim); cursor: default; opacity: 0.7; }
+
+/* List items — indented under their parent List header */
+.asset-card.is-list-item  { margin-left: 12px; border-left-color: var(--accent-green); opacity: 0.9; }
+.asset-card.is-list-header{ cursor: default; }
+
+.ac-list-indent {
+  font-size: 11px;
+  color: var(--text-dim);
+  flex-shrink: 0;
+  margin-right: 2px;
+}
 
 .ac-icon { font-size: 14px; flex-shrink: 0; }
 

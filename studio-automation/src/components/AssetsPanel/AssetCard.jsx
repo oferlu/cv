@@ -2,9 +2,9 @@ import React from 'react';
 import { inputAssetType } from '../../utils/vmixParser';
 import './AssetCard.css';
 
-const TYPE_ICON  = { camera: '🎥', clip: '🎬', graphic: '📺', audio: '🎵' };
-const TYPE_LABEL = { camera: 'CAM', clip: 'CLIP', graphic: 'GFX', audio: 'AUD' };
-const TYPE_COLOR = { camera: 'badge-blue', clip: 'badge-green', graphic: 'badge-amber', audio: 'badge-amber' };
+const TYPE_ICON  = { camera: '🎥', clip: '🎬', graphic: '📺', audio: '🎵', list: '📋' };
+const TYPE_LABEL = { camera: 'CAM', clip: 'CLIP', graphic: 'GFX', audio: 'AUD', list: 'LIST' };
+const TYPE_COLOR = { camera: 'badge-blue', clip: 'badge-green', graphic: 'badge-amber', audio: 'badge-amber', list: 'badge-blue' };
 
 function fmtMs(ms) {
   if (!ms) return 'LIVE';
@@ -15,25 +15,37 @@ function fmtMs(ms) {
 }
 
 export default function AssetCard({ input }) {
-  const assetType = inputAssetType(input.type);
+  const isListHeader = input.type === 'List';
+  const assetType    = isListHeader ? 'list' : inputAssetType(input.type);
 
   const onDragStart = (e) => {
+    if (isListHeader) return; // List container itself is not draggable — drag items instead
     e.dataTransfer.effectAllowed = 'copy';
     e.dataTransfer.setData('application/studio-asset', JSON.stringify({
-      vmixKey:   input.key,
-      name:      input.shortTitle || input.title,
-      assetType,
+      vmixKey:    input.isListItem ? input.listKey : input.key,  // always use parent key for vMix
+      name:       input.shortTitle || input.title,
+      assetType:  inputAssetType(input.type),
       durationMs: input.durationMs,
+      // Extra fields for list item playback
+      ...(input.isListItem && { listIndex: input.listIndex }),
     }));
   };
 
   return (
     <div
-      className={`asset-card asset-card--${assetType}`}
-      draggable
+      className={[
+        'asset-card',
+        `asset-card--${assetType}`,
+        input.isListItem  ? 'is-list-item'   : '',
+        isListHeader      ? 'is-list-header'  : '',
+      ].join(' ')}
+      draggable={!isListHeader}
       onDragStart={onDragStart}
-      title={`${input.title}\nType: ${input.type}\nDuration: ${fmtMs(input.durationMs)}\nDrag to Rundown`}
+      title={isListHeader
+        ? `${input.title} — expand to see clips`
+        : `${input.title}\nType: ${input.type}\nDuration: ${fmtMs(input.durationMs)}\nDrag to Rundown`}
     >
+      {input.isListItem && <span className="ac-list-indent">└</span>}
       <span className="ac-icon">{TYPE_ICON[assetType]}</span>
       <div className="ac-info">
         <span className="ac-name">{input.shortTitle || input.title}</span>
