@@ -141,9 +141,13 @@ export default function TrackRow({ track, isPhantom }) {
                 isActive={isActive}
                 playheadPct={playheadPct}
               />
-              {/* Gap marker — also a drop target */}
+              {/* Gap marker — also a drop target and transition picker */}
               {idx < track.assets.length - 1 && (
-                <GapMarker onDrop={(e) => handleDrop(e, idx)} />
+                <GapMarker
+                  trackId={track.id}
+                  nextAsset={track.assets[idx + 1]}
+                  onDrop={(e) => handleDrop(e, idx)}
+                />
               )}
             </React.Fragment>
           );

@@ -94,19 +94,97 @@ export default function AssetBlock({ asset, trackId, isActive, playheadPct }) {
   );
 }
 
-// ── Gap marker between assets ──────────────────────────────────────────────
-export function GapMarker({ onDrop }) {
-  const [over, setOver] = React.useState(false);
+// ── Gap marker between assets — with transition dropdown ──────────────────
+export function GapMarker({ trackId, nextAsset, onDrop }) {
+  const { vmixTransitions, updateAssetTransition } = useStore();
+  const [over,  setOver]  = React.useState(false);
+  const [open,  setOpen]  = React.useState(false);
+  const [durVal, setDurVal] = React.useState(nextAsset?.transitionDuration ?? 500);
+  const ref = React.useRef(null);
+
+  const transition = nextAsset?.transition ?? null; // null = pause
+
+  // Close dropdown on outside click
+  React.useEffect(() => {
+    if (!open) return;
+    const handler = (e) => { if (!ref.current?.contains(e.target)) setOpen(false); };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [open]);
+
+  const setTransition = (effect, dur) => {
+    updateAssetTransition(trackId, nextAsset.id, effect, dur ?? durVal);
+    if (effect) setDurVal(dur ?? durVal);
+  };
+
+  const transitions = vmixTransitions.length ? vmixTransitions : [];
 
   return (
     <div
-      className={`gap-marker ${over ? 'over' : ''}`}
+      ref={ref}
+      className={`gap-marker ${over ? 'over' : ''} ${transition ? 'has-transition' : ''}`}
       onDragOver={(e) => { e.preventDefault(); setOver(true); }}
       onDragLeave={() => setOver(false)}
       onDrop={(e) => { e.preventDefault(); setOver(false); onDrop(e); }}
-      title="Gap — pause point. Drop here to insert between assets."
     >
-      <span className="gap-icon">⏸</span>
+      <button
+        className="gap-btn"
+        onClick={() => setOpen((o) => !o)}
+        title={transition ? `Transition: ${transition} (${durVal}ms) — click to change` : 'Pause — click to set transition'}
+      >
+        {transition ? <span className="gap-fx">{transition.replace('Reverse','↩').substring(0,6)}</span> : '⏸'}
+      </button>
+
+      {open && (
+        <div className="gap-dropdown" onClick={(e) => e.stopPropagation()}>
+          <div className="gap-dd-title">Gap / Transition</div>
+
+          {/* Pause option */}
+          <button
+            className={`gap-dd-item ${!transition ? 'active' : ''}`}
+            onClick={() => { setTransition(null, 0); setOpen(false); }}
+          >
+            <span className="gap-dd-icon">⏸</span>
+            <span>Pause (manual Continue)</span>
+          </button>
+
+          <div className="gap-dd-sep">Auto transition →</div>
+
+          {/* Transition list */}
+          <div className="gap-dd-list">
+            {transitions.map((t) => (
+              <button
+                key={t.effect}
+                className={`gap-dd-item ${transition === t.effect ? 'active' : ''}`}
+                onClick={() => { setTransition(t.effect, t.defaultDuration); setOpen(false); }}
+              >
+                <span className="gap-dd-icon">▶</span>
+                <span>{t.label}</span>
+                <span className="gap-dd-dur">{t.defaultDuration}ms</span>
+              </button>
+            ))}
+          </div>
+
+          {/* Duration override (shown when a transition is selected) */}
+          {transition && transition !== 'Cut' && (
+            <div className="gap-dd-duration">
+              <label>
+                Duration (ms)
+                <input
+                  type="number"
+                  value={durVal}
+                  min="0" max="5000" step="100"
+                  onChange={(e) => {
+                    const v = parseInt(e.target.value, 10);
+                    setDurVal(v);
+                    updateAssetTransition(trackId, nextAsset.id, transition, v);
+                  }}
+                />
+              </label>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

@@ -4,7 +4,7 @@ import { useStore } from '../store';
 const TICK_MS = 100;
 
 export function usePlayback() {
-  const timerRef = useRef(null);
+  const timerRef  = useRef(null);
   const elapsedRef = useRef(0);
 
   const stopTimer = useCallback(() => {
@@ -12,8 +12,12 @@ export function usePlayback() {
     timerRef.current = null;
   }, []);
 
-  // Start playing a specific asset within a track
-  const startAsset = useCallback((trackId, assetIdx) => {
+  /**
+   * Start playing an asset.
+   * opts.skipPGM = true → vMix transition was already sent by the caller
+   *                        (auto-transition case); don't re-send ActiveInput.
+   */
+  const startAsset = useCallback((trackId, assetIdx, opts = {}) => {
     stopTimer();
     elapsedRef.current = 0;
 
@@ -31,11 +35,23 @@ export function usePlayback() {
       elapsedMs: 0,
     });
 
-    // ── vMix commands ────────────────────────────────────────────────────
-    // ActiveInput sets the input to Program (PGM) output immediately
-    // PreviewInput sets the input to Preview (output 2) after a delay
+    // ── vMix commands ────────────────────────────────────────────────────────
     if (window.studioAPI?.vmix && asset.vmixKey) {
-      window.studioAPI.vmix.send(`ActiveInput&Input=${asset.vmixKey}`);
+      if (!opts.skipPGM) {
+        // Direct cut to PGM (no transition — manual continue or first asset)
+        window.studioAPI.vmix.send(`ActiveInput&Input=${asset.vmixKey}`);
+      }
+
+      // For video clips: send Play so vMix actually starts the clip
+      if (asset.assetType === 'clip') {
+        const playDelay = opts.skipPGM ? (asset.transitionDuration || 0) : 0;
+        setTimeout(
+          () => window.studioAPI.vmix.send(`Play&Input=${asset.vmixKey}`),
+          playDelay
+        );
+      }
+
+      // Set next asset to Preview after configurable delay
       const nextAsset = track.assets[assetIdx + 1];
       if (nextAsset?.vmixKey) {
         setTimeout(
@@ -45,45 +61,62 @@ export function usePlayback() {
       }
     }
 
-    // ── Tick every 100ms ─────────────────────────────────────────────────
+    // ── Tick every 100ms ─────────────────────────────────────────────────────
     timerRef.current = setInterval(() => {
       elapsedRef.current += TICK_MS;
 
       const { tracks: currentTracks, setPlayback: sp } = useStore.getState();
-      const currentTrack = currentTracks.find((t) => t.id === trackId);
+      const currentTrack  = currentTracks.find((t) => t.id === trackId);
       const assetDuration = currentTrack?.assets[assetIdx]?.durationMs ?? 0;
 
       if (elapsedRef.current >= assetDuration) {
         stopTimer();
         elapsedRef.current = assetDuration;
-        const isLast = assetIdx >= (currentTrack?.assets.length ?? 0) - 1;
-        sp({
-          elapsedMs: assetDuration,
-          playing: false,
-          pausedBetween: !isLast,
-          trackDone: isLast,
-        });
+
+        const nextAsset = currentTrack?.assets[assetIdx + 1];
+        const isLast    = !nextAsset;
+
+        if (!isLast && nextAsset.transition) {
+          // ── Auto-transition to next asset ──────────────────────────────────
+          const dur = nextAsset.transitionDuration ?? 500;
+          const cmd = nextAsset.transition === 'Cut'
+            ? `Cut&Input=${nextAsset.vmixKey}`
+            : `${nextAsset.transition}&Input=${nextAsset.vmixKey}&Duration=${dur}`;
+
+          if (window.studioAPI?.vmix && nextAsset.vmixKey) {
+            window.studioAPI.vmix.send(cmd);
+          }
+
+          // Keep "playing" visually during the transition, then start next asset
+          sp({ elapsedMs: assetDuration, playing: true });
+          setTimeout(() => startAsset(trackId, assetIdx + 1, { skipPGM: true }), dur);
+        } else {
+          // Pause and wait for manual Continue
+          sp({
+            elapsedMs: assetDuration,
+            playing: false,
+            pausedBetween: !isLast,
+            trackDone: isLast,
+          });
+        }
       } else {
         sp({ elapsedMs: elapsedRef.current });
       }
     }, TICK_MS);
-  }, [stopTimer]);
+  }, [stopTimer]); // eslint-disable-line
 
-  // Start playing a track from the first asset
   const playTrack = useCallback((trackId) => {
     const { tracks } = useStore.getState();
     const track = tracks.find((t) => t.id === trackId);
     if (track?.assets.length) startAsset(trackId, 0);
   }, [startAsset]);
 
-  // Continue from a pause (between assets, or between tracks)
   const continueNext = useCallback(() => {
     const { playback, tracks } = useStore.getState();
     const { activeTrackId, activeAssetIdx, trackDone } = playback;
 
     if (trackDone) {
-      // Jump to first asset of the next non-empty track
-      const ti = tracks.findIndex((t) => t.id === activeTrackId);
+      const ti   = tracks.findIndex((t) => t.id === activeTrackId);
       const next = tracks.slice(ti + 1).find((t) => t.assets.length > 0);
       if (next) startAsset(next.id, 0);
     } else {
@@ -94,14 +127,11 @@ export function usePlayback() {
   const stop = useCallback(() => {
     stopTimer();
     useStore.getState().setPlayback({
-      playing: false,
-      pausedBetween: false,
-      trackDone: false,
-      elapsedMs: 0,
+      playing: false, pausedBetween: false, trackDone: false, elapsedMs: 0,
     });
   }, [stopTimer]);
 
-  // Global Enter key → Continue
+  // Global Enter → Continue
   useEffect(() => {
     const handler = (e) => {
       if (e.key === 'Enter' && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {

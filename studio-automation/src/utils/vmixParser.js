@@ -56,3 +56,59 @@ export const MOCK_INPUTS = [
   { key: '8', number: 8, title: 'Lower Third', shortTitle: 'L3',   type: 'Title',   durationMs: 0 },
   { key: '9', number: 9, title: 'Slide 01.png', shortTitle: 'Slide',type: 'Image',   durationMs: 0 },
 ];
+
+// ── Transitions ─────────────────────────────────────────────────────────────
+
+/**
+ * All transition effects built into every vMix installation.
+ * These are always available regardless of what vMix has configured.
+ */
+export const STANDARD_TRANSITIONS = [
+  { effect: 'Cut',               label: 'Cut',              defaultDuration: 0   },
+  { effect: 'Fade',              label: 'Fade',             defaultDuration: 500 },
+  { effect: 'Zoom',              label: 'Zoom',             defaultDuration: 500 },
+  { effect: 'Wipe',              label: 'Wipe',             defaultDuration: 500 },
+  { effect: 'Slide',             label: 'Slide',            defaultDuration: 500 },
+  { effect: 'Fly',               label: 'Fly',              defaultDuration: 500 },
+  { effect: 'CrossZoom',         label: 'Cross Zoom',       defaultDuration: 500 },
+  { effect: 'FlyRotate',         label: 'Fly Rotate',       defaultDuration: 500 },
+  { effect: 'Cube',              label: 'Cube',             defaultDuration: 500 },
+  { effect: 'CubeZoom',         label: 'Cube Zoom',        defaultDuration: 500 },
+  { effect: 'VerticalWipe',      label: 'Vertical Wipe',    defaultDuration: 500 },
+  { effect: 'VerticalSlide',     label: 'Vertical Slide',   defaultDuration: 500 },
+  { effect: 'Merge',             label: 'Merge',            defaultDuration: 500 },
+  { effect: 'WipeReverse',       label: 'Wipe Reverse',     defaultDuration: 500 },
+  { effect: 'SlideReverse',      label: 'Slide Reverse',    defaultDuration: 500 },
+  { effect: 'VerticalWipeReverse',  label: 'V.Wipe Reverse',  defaultDuration: 500 },
+  { effect: 'VerticalSlideReverse', label: 'V.Slide Reverse', defaultDuration: 500 },
+];
+
+/**
+ * Parse the <transitions> block from vMix XML state.
+ * Returns any Stinger or custom transitions configured in vMix buttons 1-4,
+ * merged with the standard list (standard takes precedence for built-ins).
+ *
+ * vMix XML format:
+ *   <transitions>
+ *     <transition number="1" effect="Fade" duration="500" />
+ *     <transition number="2" effect="Stinger1" duration="1000" />
+ *   </transitions>
+ */
+export function parseVmixTransitions(xml) {
+  try {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(xml, 'text/xml');
+    const configured = Array.from(doc.querySelectorAll('transition')).map((el) => ({
+      effect:          el.getAttribute('effect') || '',
+      label:           el.getAttribute('effect') || '',
+      defaultDuration: parseInt(el.getAttribute('duration'), 10) || 500,
+    })).filter((t) => t.effect);
+
+    // Merge: start with standard list, add any custom stingers from vMix config
+    const standardEffects = new Set(STANDARD_TRANSITIONS.map((t) => t.effect));
+    const extras = configured.filter((t) => !standardEffects.has(t.effect));
+    return [...STANDARD_TRANSITIONS, ...extras];
+  } catch {
+    return STANDARD_TRANSITIONS;
+  }
+}

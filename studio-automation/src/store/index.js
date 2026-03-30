@@ -20,6 +20,10 @@ export const useStore = create((set) => ({
   vmixInputs: [],
   setVmixInputs: (inputs) => set({ vmixInputs: inputs }),
 
+  // ── vMix transitions (fetched on connect, falls back to standard list) ───
+  vmixTransitions: [], // populated from XML; AssetsPanel seeds this from STANDARD_TRANSITIONS
+  setVmixTransitions: (transitions) => set({ vmixTransitions: transitions }),
+
   // ── Tracks ────────────────────────────────────────────────────────────────
   tracks: [newTrack(1)],
 
@@ -49,6 +53,18 @@ export const useStore = create((set) => ({
   removeAssetFromTrack: (trackId, assetId) => set((s) => ({
     tracks: s.tracks.map((t) =>
       t.id !== trackId ? t : { ...t, assets: t.assets.filter((a) => a.id !== assetId) }
+    ),
+  })),
+
+  // Update the transition on the gap BEFORE this asset
+  updateAssetTransition: (trackId, assetId, transition, transitionDuration) => set((s) => ({
+    tracks: s.tracks.map((t) =>
+      t.id !== trackId ? t : {
+        ...t,
+        assets: t.assets.map((a) =>
+          a.id !== assetId ? a : { ...a, transition, transitionDuration }
+        ),
+      }
     ),
   })),
 

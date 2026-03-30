@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useStore } from '../../store';
-import { inputCategory, MOCK_INPUTS, parseVmixXML } from '../../utils/vmixParser';
+import {
+  inputCategory, MOCK_INPUTS, parseVmixXML,
+  parseVmixTransitions, STANDARD_TRANSITIONS,
+} from '../../utils/vmixParser';
 import AssetCard from './AssetCard';
 import './AssetsPanel.css';
 
@@ -8,15 +11,22 @@ const TABS = ['general', 'media', 'graphics'];
 const TAB_LABEL = { general: 'General', media: 'Media', graphics: 'Graphics' };
 
 export default function AssetsPanel() {
-  const { vmix, vmixInputs, setVmixInputs } = useStore();
+  const { vmix, vmixInputs, setVmixInputs, setVmixTransitions } = useStore();
   const [activeTab, setActiveTab] = useState('general');
 
-  // When vMix connects and sends state, parse inputs
+  // Seed standard transitions immediately so gap dropdowns work before connecting
+  useEffect(() => {
+    setVmixTransitions(STANDARD_TRANSITIONS);
+  }, []); // eslint-disable-line
+
+  // When vMix connects and sends state, parse inputs + transitions
   useEffect(() => {
     if (!window.studioAPI) return;
     window.studioAPI.vmix.onState((xml) => {
       const inputs = parseVmixXML(xml);
       if (inputs.length) setVmixInputs(inputs);
+      // Merge standard + any custom stingers from vMix config
+      setVmixTransitions(parseVmixTransitions(xml));
     });
   }, []); // eslint-disable-line
 
