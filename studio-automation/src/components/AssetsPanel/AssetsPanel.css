@@ -1,0 +1,71 @@
+.assets-panel {
+  display: flex;
+  flex-direction: column;
+  height: 200px;
+  flex-shrink: 0;
+  background: var(--bg-panel);
+  border-top: 2px solid var(--border);
+}
+
+/* ── Header / tabs ─────────────────────────────────────────────────────────── */
+.ap-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 10px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  height: 36px;
+  gap: 10px;
+}
+
+.ap-tabs { display: flex; gap: 2px; }
+
+.ap-tab {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  padding: 5px 12px;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  border-bottom: 2px solid transparent;
+  transition: color 0.12s, border-color 0.12s;
+}
+.ap-tab:hover  { color: var(--text-primary); }
+.ap-tab.active { color: var(--accent-blue); border-bottom-color: var(--accent-blue); }
+
+.ap-tab-count {
+  background: var(--bg-elevated);
+  border-radius: 8px;
+  padding: 0 5px;
+  font-size: 9px;
+  color: var(--text-dim);
+}
+.ap-tab.active .ap-tab-count { background: rgba(74,158,255,0.2); color: var(--accent-blue); }
+
+.ap-source-badge { margin-left: auto; }
+
+/* ── Grid ──────────────────────────────────────────────────────────────────── */
+.ap-grid {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 8px 10px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 5px;
+  align-content: start;
+}
+
+.ap-empty {
+  font-size: 11px;
+  color: var(--text-dim);
+  grid-column: 1 / -1;
+  padding: 20px;
+  text-align: center;
+}

@@ -1,0 +1,41 @@
+.asset-card {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 8px;
+  background: var(--bg-surface);
+  border-radius: var(--radius-md);
+  border-left: 3px solid var(--border);
+  cursor: grab;
+  transition: background 0.12s, transform 0.1s;
+  user-select: none;
+}
+.asset-card:hover         { background: var(--bg-elevated); }
+.asset-card:active        { cursor: grabbing; transform: scale(0.97); }
+.asset-card--camera       { border-left-color: var(--accent-blue); }
+.asset-card--clip         { border-left-color: var(--accent-green); }
+.asset-card--graphic      { border-left-color: var(--accent-amber); }
+.asset-card--audio        { border-left-color: var(--accent-purple); }
+
+.ac-icon { font-size: 14px; flex-shrink: 0; }
+
+.ac-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 1px;
+}
+.ac-name {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ac-dur {
+  font-size: 10px;
+  color: var(--text-dim);
+  font-family: var(--font-mono);
+}

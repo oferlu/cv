@@ -1,0 +1,88 @@
+.pb-bar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  height: 44px;
+  padding: 0 14px;
+  background: var(--bg-primary);
+  border-bottom: 2px solid var(--border);
+  flex-shrink: 0;
+}
+
+.pb-controls { display: flex; gap: 6px; }
+
+.pb-btn {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  padding: 5px 14px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: background 0.12s;
+}
+.pb-btn:disabled { opacity: 0.3; cursor: default; }
+.pb-btn:not(:disabled):hover { filter: brightness(1.2); }
+
+.pb-play         { border-color: var(--accent-green); color: var(--accent-green); }
+.pb-play.active  { background: var(--accent-green); color: #000; }
+.pb-play.continue { background: var(--accent-amber); border-color: var(--accent-amber); color: #000; }
+.pb-stop         { border-color: var(--accent-red); color: var(--accent-red); }
+
+.pb-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+}
+
+.pb-status {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  padding: 2px 7px;
+  border-radius: 3px;
+  white-space: nowrap;
+}
+.pb-status--play  { background: var(--accent-green); color: #000; }
+.pb-status--pause { background: var(--accent-amber); color: #000; }
+.pb-status--idle  { background: var(--bg-elevated);  color: var(--text-dim); }
+
+.pb-asset-name {
+  font-size: 12px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 260px;
+}
+
+.pb-timer {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+.pb-hint { margin-left: auto; }
+.pb-hint-text {
+  font-size: 11px;
+  color: var(--accent-amber);
+  animation: blink 1s step-end infinite;
+}
+.pb-hint-text kbd {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 1px 5px;
+  font-size: 10px;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.3; }
+}

@@ -103,3 +103,27 @@
   border-radius: var(--radius-sm);
 }
 .tb-settings:hover { background: var(--bg-elevated); }
+
+/* ── View switcher ─────────────────────────────────────────────────────────── */
+.view-switcher {
+  display: flex;
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 2px;
+  gap: 2px;
+}
+
+.view-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  padding: 4px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  transition: background 0.12s, color 0.12s;
+}
+.view-btn:hover  { color: var(--text-primary); }
+.view-btn.active { background: var(--accent-blue); color: #000; }

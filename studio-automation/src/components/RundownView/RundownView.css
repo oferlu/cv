@@ -1,0 +1,64 @@
+.rundown-view {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.rundown-tracks {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: var(--bg-surface);
+}
+
+/* ── Phantom track ─────────────────────────────────────────────────────────── */
+.phantom-track {
+  display: flex;
+  align-items: stretch;
+  min-height: 48px;
+  opacity: 0.35;
+  border-bottom: 1px dashed var(--border);
+  transition: opacity 0.15s;
+}
+.phantom-track:hover,
+.phantom-track[data-drag-over] { opacity: 1; background: rgba(74,158,255,0.05); }
+
+.phantom-label {
+  width: 160px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  background: var(--bg-panel);
+  border-right: 1px solid var(--border);
+}
+
+.phantom-hint {
+  font-size: 10px;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+
+.phantom-body { flex: 1; }
+
+/* ── Footer ────────────────────────────────────────────────────────────────── */
+.rundown-footer {
+  padding: 6px 10px;
+  background: var(--bg-panel);
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.add-track-btn {
+  background: none;
+  border: 1px dashed var(--border);
+  color: var(--text-dim);
+  border-radius: var(--radius-sm);
+  padding: 4px 14px;
+  cursor: pointer;
+  font-size: 11px;
+  transition: border-color 0.12s, color 0.12s;
+}
+.add-track-btn:hover { border-color: var(--accent-blue); color: var(--accent-blue); }
