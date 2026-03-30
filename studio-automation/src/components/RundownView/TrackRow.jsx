@@ -1,39 +1,72 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { useStore } from '../../store';
 import { usePlayback } from '../../hooks/usePlayback';
-import AssetBlock, { GapMarker, PX_PER_SEC, ASSET_MIN_PX, GAP_PX } from './AssetBlock';
+import AssetBlock, { GapMarker, ASSET_MIN_PX, GAP_PX } from './AssetBlock';
 import './TrackRow.css';
 
 export default function TrackRow({ track, isPhantom }) {
-  const { playback, addAssetToTrack, renameTrack, removeTrack, settings } = useStore();
+  const {
+    zoom, playback,
+    addAssetToTrack, renameTrack, removeTrack, moveAsset, settings,
+    rulerScrollLeft, setRulerScrollLeft,
+  } = useStore();
   const { playTrack } = usePlayback();
-  const [editing, setEditing] = useState(false);
-  const [nameVal, setNameVal] = useState(track.name);
+
+  const [editing,  setEditing]  = useState(false);
+  const [nameVal,  setNameVal]  = useState(track.name);
   const [dropOver, setDropOver] = useState(false);
-  const bodyRef = useRef(null);
+
+  const bodyRef    = useRef(null);
+  const syncingRef = useRef(false);
 
   const isActiveTrack = playback.activeTrackId === track.id;
 
-  // Auto-scroll body so playhead stays visible
+  // ── Scroll sync: store → DOM ──────────────────────────────────────────────
+  useEffect(() => {
+    const el = bodyRef.current;
+    if (!el || syncingRef.current) return;
+    syncingRef.current = true;
+    el.scrollLeft = rulerScrollLeft;
+    requestAnimationFrame(() => { syncingRef.current = false; });
+  }, [rulerScrollLeft]);
+
+  // ── Scroll sync: DOM → store ──────────────────────────────────────────────
+  const handleScroll = useCallback((e) => {
+    if (syncingRef.current) return;
+    setRulerScrollLeft(e.target.scrollLeft);
+  }, [setRulerScrollLeft]);
+
+  // ── Auto-scroll to follow playhead ────────────────────────────────────────
   useEffect(() => {
     if (!isActiveTrack || !bodyRef.current) return;
-    const playheadX = calcPlayheadX(track, playback.activeAssetIdx, playback.elapsedMs);
-    const el = bodyRef.current;
-    const scrollTarget = playheadX - el.clientWidth / 2;
-    el.scrollLeft = Math.max(0, scrollTarget);
+    const px = calcPlayheadX(track, playback.activeAssetIdx, playback.elapsedMs, zoom);
+    const el  = bodyRef.current;
+    const target = px - el.clientWidth * 0.4;
+    el.scrollLeft = Math.max(0, target);
   }, [playback.elapsedMs, isActiveTrack]); // eslint-disable-line
 
+  // ── Unified drop handler ───────────────────────────────────────────────────
   const handleDrop = (e, insertAfterIdx = -1) => {
     e.preventDefault();
     setDropOver(false);
-    const raw = e.dataTransfer.getData('application/studio-asset');
-    if (!raw) return;
-    const assetData = JSON.parse(raw);
-    // Use cameraDuration for live sources, actual duration for clips
-    if (assetData.assetType === 'camera' || assetData.durationMs === 0) {
-      assetData.durationMs = settings.cameraDuration;
+
+    // Move existing asset (drag-to-reorder or cross-track move)
+    const moveRaw = e.dataTransfer.getData('application/studio-asset-move');
+    if (moveRaw) {
+      const { fromTrackId, assetId } = JSON.parse(moveRaw);
+      moveAsset(fromTrackId, assetId, track.id, insertAfterIdx);
+      return;
     }
-    addAssetToTrack(track.id, assetData, insertAfterIdx);
+
+    // New asset dragged from Assets Panel
+    const newRaw = e.dataTransfer.getData('application/studio-asset');
+    if (newRaw) {
+      const assetData = JSON.parse(newRaw);
+      if (assetData.assetType === 'camera' || assetData.durationMs === 0) {
+        assetData.durationMs = settings.cameraDuration;
+      }
+      addAssetToTrack(track.id, assetData, insertAfterIdx);
+    }
   };
 
   const commitRename = () => {
@@ -41,9 +74,8 @@ export default function TrackRow({ track, isPhantom }) {
     setEditing(false);
   };
 
-  // Calculate playhead X for active asset in this track
   const playheadX = isActiveTrack
-    ? calcPlayheadX(track, playback.activeAssetIdx, playback.elapsedMs)
+    ? calcPlayheadX(track, playback.activeAssetIdx, playback.elapsedMs, zoom)
     : -1;
 
   return (
@@ -63,12 +95,19 @@ export default function TrackRow({ track, isPhantom }) {
             value={nameVal}
             onChange={(e) => setNameVal(e.target.value)}
             onBlur={commitRename}
-            onKeyDown={(e) => { if (e.key === 'Enter') commitRename(); if (e.key === 'Escape') setEditing(false); }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') commitRename();
+              if (e.key === 'Escape') setEditing(false);
+            }}
             autoFocus
           />
         ) : (
-          <span className="track-name" onDoubleClick={() => setEditing(true)} title="Double-click to rename">
-            {isPhantom ? '+ drop here or click to add' : track.name}
+          <span
+            className="track-name"
+            onDoubleClick={() => !isPhantom && setEditing(true)}
+            title={isPhantom ? '' : 'Double-click to rename'}
+          >
+            {isPhantom ? '↓ drop to create track' : track.name}
           </span>
         )}
 
@@ -77,10 +116,11 @@ export default function TrackRow({ track, isPhantom }) {
         )}
       </div>
 
-      {/* ── Body (scrollable) ── */}
+      {/* ── Body (scrollable, synced) ── */}
       <div
         ref={bodyRef}
         className={`track-body ${dropOver ? 'drop-over' : ''} ${track.assets.length === 0 ? 'is-empty' : ''}`}
+        onScroll={handleScroll}
         onDragOver={(e) => { e.preventDefault(); setDropOver(true); }}
         onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setDropOver(false); }}
         onDrop={(e) => handleDrop(e, track.assets.length - 1)}
@@ -90,8 +130,7 @@ export default function TrackRow({ track, isPhantom }) {
         )}
 
         {track.assets.map((asset, idx) => {
-          // Is the playhead inside this asset?
-          const isActive = isActiveTrack && playback.activeAssetIdx === idx;
+          const isActive   = isActiveTrack && playback.activeAssetIdx === idx;
           const playheadPct = isActive ? playback.elapsedMs / asset.durationMs : 0;
 
           return (
@@ -100,8 +139,9 @@ export default function TrackRow({ track, isPhantom }) {
                 asset={asset}
                 trackId={track.id}
                 isActive={isActive}
-                playheadPct={Math.min(1, playheadPct)}
+                playheadPct={playheadPct}
               />
+              {/* Gap marker — also a drop target */}
               {idx < track.assets.length - 1 && (
                 <GapMarker onDrop={(e) => handleDrop(e, idx)} />
               )}
@@ -109,7 +149,7 @@ export default function TrackRow({ track, isPhantom }) {
           );
         })}
 
-        {/* Drop zone at end of assets */}
+        {/* Trailing drop zone */}
         {track.assets.length > 0 && (
           <div
             className="track-end-drop"
@@ -122,12 +162,11 @@ export default function TrackRow({ track, isPhantom }) {
   );
 }
 
-// Calculate absolute X position of the playhead within the track body
-function calcPlayheadX(track, activeAssetIdx, elapsedMs) {
+function calcPlayheadX(track, activeAssetIdx, elapsedMs, zoom) {
   let x = 0;
   for (let i = 0; i <= activeAssetIdx && i < track.assets.length; i++) {
     const asset = track.assets[i];
-    const w = Math.max(ASSET_MIN_PX, (asset.durationMs / 1000) * PX_PER_SEC);
+    const w = Math.max(ASSET_MIN_PX, (asset.durationMs / 1000) * zoom);
     if (i < activeAssetIdx) {
       x += w + GAP_PX;
     } else {

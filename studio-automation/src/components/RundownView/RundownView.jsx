@@ -1,6 +1,7 @@
 import React from 'react';
 import { useStore } from '../../store';
 import PlaybackControls from './PlaybackControls';
+import TimelineRuler from './TimelineRuler';
 import TrackRow from './TrackRow';
 import './RundownView.css';
 
@@ -31,6 +32,7 @@ export default function RundownView() {
   return (
     <div className="rundown-view">
       <PlaybackControls />
+      <TimelineRuler />
 
       <div className="rundown-tracks">
         {tracks.map((track) => (

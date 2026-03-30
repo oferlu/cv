@@ -52,6 +52,52 @@ export const useStore = create((set) => ({
     ),
   })),
 
+  // ── Zoom / Scroll ─────────────────────────────────────────────────────────
+  zoom: 40, // px per second
+  setZoom: (z) => set({ zoom: Math.max(5, Math.min(400, z)) }),
+
+  rulerScrollLeft: 0,
+  setRulerScrollLeft: (x) => set({ rulerScrollLeft: x }),
+
+  // Update duration of an asset in a track (used by resize handles)
+  updateAssetDuration: (trackId, assetId, durationMs) => set((s) => ({
+    tracks: s.tracks.map((t) =>
+      t.id !== trackId ? t : {
+        ...t,
+        assets: t.assets.map((a) =>
+          a.id !== assetId ? a : { ...a, durationMs: Math.max(500, durationMs) }
+        ),
+      }
+    ),
+  })),
+
+  // Move an asset between tracks or reorder within a track
+  moveAsset: (fromTrackId, assetId, toTrackId, insertAfterIdx) => set((s) => {
+    const fromTrack = s.tracks.find((t) => t.id === fromTrackId);
+    const asset = fromTrack?.assets.find((a) => a.id === assetId);
+    if (!asset) return s;
+
+    const tracks = s.tracks.map((t) => {
+      if (t.id === fromTrackId && t.id === toTrackId) {
+        // Same track — reorder
+        const assets = t.assets.filter((a) => a.id !== assetId);
+        const insertIdx = insertAfterIdx >= 0 ? insertAfterIdx : assets.length;
+        // Adjust for the removed element
+        const adjusted = assets.indexOf(asset) <= insertAfterIdx ? insertIdx - 1 : insertIdx;
+        assets.splice(Math.max(0, adjusted + 1), 0, asset);
+        return { ...t, assets };
+      }
+      if (t.id === fromTrackId) return { ...t, assets: t.assets.filter((a) => a.id !== assetId) };
+      if (t.id === toTrackId) {
+        const assets = [...t.assets];
+        insertAfterIdx >= 0 ? assets.splice(insertAfterIdx + 1, 0, asset) : assets.push(asset);
+        return { ...t, assets };
+      }
+      return t;
+    });
+    return { tracks };
+  }),
+
   // ── Playback ──────────────────────────────────────────────────────────────
   playback: {
     activeTrackId: null,

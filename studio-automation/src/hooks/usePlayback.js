@@ -32,8 +32,10 @@ export function usePlayback() {
     });
 
     // ── vMix commands ────────────────────────────────────────────────────
+    // ActiveInput sets the input to Program (PGM) output immediately
+    // PreviewInput sets the input to Preview (output 2) after a delay
     if (window.studioAPI?.vmix && asset.vmixKey) {
-      window.studioAPI.vmix.send(`Cut&Input=${asset.vmixKey}`);
+      window.studioAPI.vmix.send(`ActiveInput&Input=${asset.vmixKey}`);
       const nextAsset = track.assets[assetIdx + 1];
       if (nextAsset?.vmixKey) {
         setTimeout(

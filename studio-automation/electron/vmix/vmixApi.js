@@ -99,12 +99,20 @@ class VmixApi extends EventEmitter {
   }
 
   /**
-   * Send a command via HTTP API
-   * Example: sendCommand('Cut') or sendCommand('Transition1&Duration=1000')
+   * Send a command via HTTP API.
+   * Pass the function + params WITHOUT 'Function=' prefix.
+   * Examples:
+   *   sendCommand('Cut')
+   *   sendCommand('ActiveInput&Input=1')
+   *   sendCommand('PreviewInput&Input=2')
+   *   sendCommand('Fade&Input=1&Duration=1000')
+   *
+   * The '&' must NOT be encoded — it separates query params.
    */
   sendCommand(command) {
     return new Promise((resolve, reject) => {
-      const url = `http://${this.host}:${this.httpPort}/api?Function=${encodeURIComponent(command)}`;
+      // Build: /api?Function=Cut&Input=1  (not encoded — & separates params)
+      const url = `http://${this.host}:${this.httpPort}/api?Function=${command}`;
       http.get(url, (res) => {
         let body = '';
         res.on('data', (c) => (body += c));
