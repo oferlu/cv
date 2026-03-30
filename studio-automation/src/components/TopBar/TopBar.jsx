@@ -69,27 +69,22 @@ export default function TopBar() {
 }
 
 function VmixStatus() {
-  const { vmix, setVmixConnected, setVmixHost, setVmixTally } = useStore();
+  // Event handling is done by useVmixSync (App.jsx) — this component only handles UI
+  const { vmix, setVmixConnected, setVmixHost } = useStore();
   const [connecting, setConnecting] = useState(false);
   const [error, setError] = useState(null);
 
-  // Load saved settings
+  // Load saved host/port from localStorage on first render
   useEffect(() => {
     const h = localStorage.getItem('vmix_host');
     const p = localStorage.getItem('vmix_port');
     if (h) setVmixHost(h, p ? parseInt(p, 10) : 8099);
   }, []); // eslint-disable-line
 
-  // Register IPC listeners
+  // Clear error when successfully connected (store update from useVmixSync)
   useEffect(() => {
-    if (!window.studioAPI) return;
-    const api = window.studioAPI.vmix;
-    api.onConnected(() => { setVmixConnected(true); setError(null); });
-    api.onDisconnected(() => setVmixConnected(false));
-    api.onTally((t) => setVmixTally(t));
-    return () => ['vmix:connected','vmix:disconnected','vmix:tally','vmix:state']
-      .forEach((ch) => api.removeAllListeners(ch));
-  }, []); // eslint-disable-line
+    if (vmix.connected) setError(null);
+  }, [vmix.connected]);
 
   const connect = async () => {
     if (!window.studioAPI) { setError('Not in Electron'); return; }

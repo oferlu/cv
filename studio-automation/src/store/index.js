@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { STANDARD_TRANSITIONS } from '../utils/vmixParser';
 
 let _id = 1;
 const uid = () => `id_${++_id}_${Date.now()}`;
@@ -20,8 +21,8 @@ export const useStore = create((set) => ({
   vmixInputs: [],
   setVmixInputs: (inputs) => set({ vmixInputs: inputs }),
 
-  // ── vMix transitions (fetched on connect, falls back to standard list) ───
-  vmixTransitions: [], // populated from XML; AssetsPanel seeds this from STANDARD_TRANSITIONS
+  // ── vMix transitions — seeded immediately so gap dropdowns work offline ──
+  vmixTransitions: STANDARD_TRANSITIONS, // augmented with stingers on vMix connect
   setVmixTransitions: (transitions) => set({ vmixTransitions: transitions }),
 
   // ── Tracks ────────────────────────────────────────────────────────────────
