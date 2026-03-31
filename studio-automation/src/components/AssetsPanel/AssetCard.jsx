@@ -16,7 +16,7 @@ function fmtMs(ms) {
  * - Other General-type inputs get type-specific icons based on their vMix type.
  */
 function getDisplayProps(input) {
-  const assetType = input.type === 'List' ? 'list' : inputAssetType(input.type);
+  const assetType = (input.type === 'VideoList' || input.type === 'List') ? 'list' : inputAssetType(input.type);
 
   // clip / graphic / audio / list — straightforward
   if (assetType === 'clip')    return { icon: '🎬', label: 'CLIP', color: 'badge-green' };
@@ -41,8 +41,8 @@ function getDisplayProps(input) {
 }
 
 export default function AssetCard({ input }) {
-  const isListHeader = input.type === 'List';
-  const assetType    = isListHeader ? 'list' : inputAssetType(input.type);
+  const isListHeader = input.type === 'VideoList' || input.type === 'List';
+  const assetType = isListHeader ? 'list' : inputAssetType(input.type);
   const { icon, label, color } = getDisplayProps(input);
 
   const onDragStart = (e) => {
