@@ -5,7 +5,6 @@ import './AssetBlock.css';
 export const ASSET_MIN_PX = 80;
 export const GAP_PX       = 28;
 
-const TYPE_ICON  = { camera: '🎥', clip: '🎬', graphic: '📺', audio: '🎵' };
 const TYPE_COLOR = {
   camera:  'var(--track-intro)',
   clip:    'var(--track-main)',
@@ -75,7 +74,6 @@ export default function AssetBlock({ asset, trackId, isActive, playheadPct }) {
         <div className="asset-playhead" style={{ left: `${Math.min(1, playheadPct) * 100}%` }} />
       )}
 
-      <span className="asset-icon">{TYPE_ICON[asset.assetType] || '⬤'}</span>
       <div className="asset-info">
         <span className="asset-name">{asset.name}</span>
         <span className="asset-dur">{fmtMs(asset.durationMs)}</span>
@@ -134,7 +132,7 @@ export function GapMarker({ trackId, nextAsset, onDrop }) {
       className={`gap-marker ${over ? 'over' : ''} ${transition ? 'has-transition' : ''}`}
       onDragOver={(e) => { e.preventDefault(); setOver(true); }}
       onDragLeave={() => setOver(false)}
-      onDrop={(e) => { e.preventDefault(); setOver(false); onDrop(e); }}
+      onDrop={(e) => { e.preventDefault(); e.stopPropagation(); setOver(false); onDrop(e); }}
     >
       <button
         ref={btnRef}

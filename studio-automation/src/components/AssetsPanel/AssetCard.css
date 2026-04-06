@@ -29,8 +29,6 @@
   margin-right: 2px;
 }
 
-.ac-icon { font-size: 14px; flex-shrink: 0; }
-
 .ac-info {
   flex: 1;
   display: flex;

@@ -18,32 +18,30 @@ function fmtMs(ms) {
 function getDisplayProps(input) {
   const assetType = (input.type === 'VideoList' || input.type === 'List') ? 'list' : inputAssetType(input.type);
 
-  // clip / graphic / audio / list — straightforward
-  if (assetType === 'clip')    return { icon: '🎬', label: 'CLIP', color: 'badge-green' };
-  if (assetType === 'graphic') return { icon: '📺', label: 'GFX',  color: 'badge-amber' };
-  if (assetType === 'audio')   return { icon: '🎵', label: 'AUD',  color: 'badge-purple' };
-  if (assetType === 'list')    return { icon: '📋', label: 'LIST', color: 'badge-blue' };
+  if (assetType === 'clip')    return { label: 'CLIP', color: 'badge-green' };
+  if (assetType === 'graphic') return { label: 'GFX',  color: 'badge-amber' };
+  if (assetType === 'audio')   return { label: 'AUD',  color: 'badge-purple' };
+  if (assetType === 'list')    return { label: 'LIST', color: 'badge-blue' };
 
-  // camera category — only show 🎥/CAM if name contains "cam"
+  // Camera category — badge CAM only if name contains "cam"
   const name = (input.shortTitle || input.title || '').toLowerCase();
-  if (name.includes('cam')) return { icon: '🎥', label: 'CAM', color: 'badge-blue' };
+  if (name.includes('cam')) return { label: 'CAM',  color: 'badge-blue' };
 
-  // Other General (NDI, Capture, Stream, VirtualSet, Mix, Colour, …)
   switch (input.type) {
-    case 'NDI':        return { icon: '📡', label: 'NDI',  color: 'badge-blue' };
-    case 'Capture':    return { icon: '📹', label: 'CAP',  color: 'badge-blue' };
-    case 'Stream':     return { icon: '📡', label: 'STR',  color: 'badge-blue' };
-    case 'VirtualSet': return { icon: '🎞',  label: 'VSET', color: 'badge-blue' };
-    case 'Mix':        return { icon: '🔀', label: 'MIX',  color: 'badge-blue' };
-    case 'Colour':     return { icon: '⬛', label: 'COL',  color: 'badge-blue' };
-    default:           return { icon: '⬤', label: 'SRC',  color: 'badge-blue' };
+    case 'NDI':        return { label: 'NDI',  color: 'badge-blue' };
+    case 'Capture':    return { label: 'CAP',  color: 'badge-blue' };
+    case 'Stream':     return { label: 'STR',  color: 'badge-blue' };
+    case 'VirtualSet': return { label: 'VSET', color: 'badge-blue' };
+    case 'Mix':        return { label: 'MIX',  color: 'badge-blue' };
+    case 'Colour':     return { label: 'COL',  color: 'badge-blue' };
+    default:           return { label: 'SRC',  color: 'badge-blue' };
   }
 }
 
 export default function AssetCard({ input }) {
   const isListHeader = input.type === 'VideoList' || input.type === 'List';
   const assetType = isListHeader ? 'list' : inputAssetType(input.type);
-  const { icon, label, color } = getDisplayProps(input);
+  const { label, color } = getDisplayProps(input);
 
   const onDragStart = (e) => {
     if (isListHeader) return; // List container itself is not draggable — drag items instead
@@ -73,7 +71,6 @@ export default function AssetCard({ input }) {
         : `${input.title}\nType: ${input.type}\nDuration: ${fmtMs(input.durationMs)}\nDrag to Rundown`}
     >
       {input.isListItem && <span className="ac-list-indent">└</span>}
-      <span className="ac-icon">{icon}</span>
       <div className="ac-info">
         <span className="ac-name">{input.shortTitle || input.title}</span>
         <span className="ac-dur">{fmtMs(input.durationMs)}</span>
