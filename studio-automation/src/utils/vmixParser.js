@@ -24,12 +24,18 @@ export function parseVmixXML(xml) {
     const inputEls = doc.getElementsByTagName('input');
 
     for (let i = 0; i < inputEls.length; i++) {
-      const el       = inputEls[i];
-      const type     = el.getAttribute('type') || 'Camera';
-      const inputKey = el.getAttribute('key') || el.getAttribute('number');
-      // Use only attributes for title — el.textContent would include child item filenames
-      const title    = el.getAttribute('title') || el.getAttribute('name') || `Input ${i + 1}`;
-      const number   = parseInt(el.getAttribute('number'), 10);
+      const el     = inputEls[i];
+      const type   = el.getAttribute('type') || 'Camera';
+      const number = parseInt(el.getAttribute('number'), 10);
+
+      // Use the input NUMBER as the vMix command key — it's universally accepted
+      // by all vMix API commands (ActiveInput, Play, Pause, etc.) across all
+      // versions. GUIDs from the 'key' attribute work in modern vMix but cause
+      // routing failures in some configurations.
+      const inputKey = String(number);
+
+      // Use only attributes for title — el.textContent includes child item filenames
+      const title = el.getAttribute('title') || el.getAttribute('name') || `Input ${number}`;
 
       results.push({
         key:        inputKey,
@@ -49,7 +55,6 @@ export function parseVmixXML(xml) {
 
         for (let j = 0; j < itemEls.length; j++) {
           const item = itemEls[j];
-          // Filename may be textContent or an attribute depending on vMix version
           const rawPath = (item.textContent || '').trim()
                        || item.getAttribute('filename')
                        || item.getAttribute('name')
@@ -66,7 +71,7 @@ export function parseVmixXML(xml) {
             durationMs: parseInt(item.getAttribute('duration'), 10) || parentDurationMs,
             state:      'Paused',
             isListItem: true,
-            listKey:    inputKey,
+            listKey:    inputKey,  // parent's number string — used in SelectIndex + ActiveInput
             listIndex:  j,
           });
         }

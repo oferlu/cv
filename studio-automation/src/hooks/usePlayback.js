@@ -56,13 +56,22 @@ export function usePlayback() {
         );
       }
 
-      // Set next asset to Preview after configurable delay
+      // Prepare next asset: restart clip to first frame + freeze + route to Preview
       const nextAsset = track.assets[assetIdx + 1];
       if (nextAsset?.vmixKey) {
-        setTimeout(
-          () => window.studioAPI.vmix.send(`PreviewInput&Input=${nextAsset.vmixKey}`),
-          settings.previewDelay
-        );
+        setTimeout(() => {
+          const api = window.studioAPI.vmix;
+          // For list items, select the right index first
+          if (nextAsset.listIndex !== undefined) {
+            api.send(`SelectIndex&Value=${nextAsset.listIndex}&Input=${nextAsset.vmixKey}`);
+          }
+          // Clips: rewind to first frame and freeze so Preview shows the opening frame
+          if (nextAsset.assetType === 'clip') {
+            api.send(`Restart&Input=${nextAsset.vmixKey}`);
+            api.send(`Pause&Input=${nextAsset.vmixKey}`);
+          }
+          api.send(`PreviewInput&Input=${nextAsset.vmixKey}`);
+        }, settings.previewDelay);
       }
     }
 

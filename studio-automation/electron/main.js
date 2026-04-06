@@ -26,9 +26,7 @@ function createWindow() {
 
   mainWindow.loadURL(url);
 
-  if (isDev) {
-    mainWindow.webContents.openDevTools();
-  }
+  // DevTools: open manually with F12 — do NOT auto-open
 }
 
 app.whenReady().then(createWindow);

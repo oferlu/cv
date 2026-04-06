@@ -109,7 +109,9 @@ export const useStore = create((set) => ({
       if (t.id === fromTrackId) return { ...t, assets: t.assets.filter((a) => a.id !== assetId) };
       if (t.id === toTrackId) {
         const assets = [...t.assets];
-        insertAfterIdx >= 0 ? assets.splice(insertAfterIdx + 1, 0, asset) : assets.push(asset);
+        if (insertAfterIdx === null || insertAfterIdx === undefined) assets.push(asset);
+        else if (insertAfterIdx < 0) assets.unshift(asset);
+        else assets.splice(insertAfterIdx + 1, 0, asset);
         return { ...t, assets };
       }
       return t;
