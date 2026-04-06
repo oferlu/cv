@@ -1,61 +1,96 @@
 import React, { useState } from 'react';
 import { useStore } from '../../store';
-import { inputCategory, MOCK_INPUTS } from '../../utils/vmixParser';
+import { inputCategory } from '../../utils/vmixParser';
 import AssetCard from './AssetCard';
 import './AssetsPanel.css';
 
-const TABS = ['general', 'media', 'graphics'];
-const TAB_LABEL = { general: 'General', media: 'Media', graphics: 'Graphics' };
+const GROUPS = [
+  { id: 'general',  label: 'Input',    icon: '📹' },
+  { id: 'media',    label: 'Media',    icon: '🎬' },
+  { id: 'graphics', label: 'Graphics', icon: '📺' },
+];
 
 export default function AssetsPanel() {
-  const { vmix, vmixInputs } = useStore();
-  const [activeTab, setActiveTab] = useState('general');
+  const { vmixInputs, vmix } = useStore();
+  const [open, setOpen]         = useState(true);
+  const [collapsed, setCollapsed] = useState({});
 
-  // vMix state updates are handled by useVmixSync (App.jsx — polls every 5s)
-  // Nothing to register here.
+  const toggle = (id) => setCollapsed((prev) => ({ ...prev, [id]: !prev[id] }));
 
-  // Use real inputs if available, else mock
-  const source = vmixInputs.length ? vmixInputs : MOCK_INPUTS;
-  const filtered = source.filter((i) => inputCategory(i.type) === activeTab);
+  // Only show real inputs — never mock data
+  const source = vmixInputs;
+  const connected = vmix.connected;
 
   return (
-    <div className="assets-panel">
-      {/* Header + tabs */}
-      <div className="ap-header">
-        <div className="ap-tabs">
-          {TABS.map((tab) => (
+    <aside className={`assets-sidebar ${open ? 'sidebar-open' : 'sidebar-closed'}`}>
+      {/* ── Sidebar toggle ─────────────────────────────────────────── */}
+      <button
+        className="sidebar-toggle-btn"
+        onClick={() => setOpen(!open)}
+        title={open ? 'Collapse panel' : 'Expand panel'}
+      >
+        {open ? '◀' : '▶'}
+      </button>
+
+      {/* ── Connection badge ───────────────────────────────────────── */}
+      {open && (
+        <div className="sidebar-status">
+          {connected
+            ? <span className="badge badge-green">● Live</span>
+            : <span className="sidebar-status-offline">Not connected</span>}
+        </div>
+      )}
+
+      {/* ── Groups ────────────────────────────────────────────────── */}
+      {GROUPS.map(({ id, label, icon }) => {
+        const items = source.filter((i) => inputCategory(i.type) === id);
+        const isCollapsed = collapsed[id];
+
+        if (!open) {
+          // Collapsed sidebar — show icon + count only
+          return (
             <button
-              key={tab}
-              className={`ap-tab ${activeTab === tab ? 'active' : ''}`}
-              onClick={() => setActiveTab(tab)}
+              key={id}
+              className="sidebar-icon-tab"
+              onClick={() => setOpen(true)}
+              title={`${label} (${items.length})`}
             >
-              {TAB_LABEL[tab]}
-              <span className="ap-tab-count">
-                {source.filter((i) => inputCategory(i.type) === tab).length}
-              </span>
+              <span className="sidebar-icon-tab-icon">{icon}</span>
+              {items.length > 0 && (
+                <span className="sidebar-icon-tab-count">{items.length}</span>
+              )}
             </button>
-          ))}
-        </div>
+          );
+        }
 
-        <div className="ap-source-badge">
-          {vmixInputs.length ? (
-            <span className="badge badge-green">● Live from vMix</span>
-          ) : (
-            <span className="badge" style={{ background: 'var(--bg-elevated)', color: 'var(--text-dim)' }}>
-              Mock — connect vMix to load real assets
-            </span>
-          )}
-        </div>
-      </div>
+        return (
+          <div key={id} className="sidebar-group">
+            <button
+              className="sidebar-group-hdr"
+              onClick={() => toggle(id)}
+            >
+              <span className="sg-icon">{icon}</span>
+              <span className="sg-label">{label}</span>
+              <span className="sg-count">{items.length}</span>
+              <span className="sg-chevron">{isCollapsed ? '›' : '⌄'}</span>
+            </button>
 
-      {/* Asset grid */}
-      <div className="ap-grid">
-        {filtered.length === 0 ? (
-          <span className="ap-empty">No {TAB_LABEL[activeTab]} inputs found</span>
-        ) : (
-          filtered.map((input) => <AssetCard key={input.key} input={input} />)
-        )}
-      </div>
-    </div>
+            {!isCollapsed && (
+              <div className="sidebar-group-body">
+                {items.length === 0 ? (
+                  <span className="sidebar-empty">
+                    {connected ? `No ${label} inputs` : 'Connect vMix to load'}
+                  </span>
+                ) : (
+                  items.map((input) => (
+                    <AssetCard key={input.key} input={input} />
+                  ))
+                )}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </aside>
   );
 }

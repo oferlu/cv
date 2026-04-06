@@ -6,10 +6,20 @@
   background: var(--bg-primary);
 }
 
+/* Sidebar + main content side by side */
 .app-body {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   flex: 1;
   overflow: hidden;
   min-height: 0;
+}
+
+/* Main content area (RundownView / ScriptView) */
+.app-main {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
 }

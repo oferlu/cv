@@ -103,6 +103,17 @@
   white-space: nowrap;
 }
 
+.track-start-drop {
+  flex-shrink: 0;
+  width: 12px;
+  height: 44px;
+  border-radius: var(--radius-sm);
+  border: 2px dashed transparent;
+  transition: border-color 0.12s, width 0.12s;
+}
+.track-start-drop:hover,
+.track-body.drop-over .track-start-drop { width: 40px; border-color: var(--accent-blue); }
+
 .track-end-drop {
   flex-shrink: 0;
   width: 60px;

@@ -1,71 +1,125 @@
-.assets-panel {
+/* ── Sidebar shell ──────────────────────────────────────────────────────────── */
+.assets-sidebar {
   display: flex;
   flex-direction: column;
-  height: 200px;
   flex-shrink: 0;
   background: var(--bg-panel);
-  border-top: 2px solid var(--border);
+  border-right: 1px solid var(--border);
+  overflow: hidden;
+  transition: width 0.18s ease;
 }
 
-/* ── Header / tabs ─────────────────────────────────────────────────────────── */
-.ap-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 10px;
-  border-bottom: 1px solid var(--border);
+.sidebar-open   { width: 220px; }
+.sidebar-closed { width: 40px; }
+
+/* ── Toggle button ─────────────────────────────────────────────────────────── */
+.sidebar-toggle-btn {
   flex-shrink: 0;
   height: 36px;
-  gap: 10px;
-}
-
-.ap-tabs { display: flex; gap: 2px; }
-
-.ap-tab {
+  width: 100%;
   background: none;
   border: none;
+  border-bottom: 1px solid var(--border);
   color: var(--text-muted);
-  padding: 5px 12px;
-  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
   cursor: pointer;
-  font-size: 11px;
-  font-weight: 600;
+  font-size: 12px;
   display: flex;
   align-items: center;
-  gap: 5px;
-  border-bottom: 2px solid transparent;
-  transition: color 0.12s, border-color 0.12s;
+  justify-content: center;
+  transition: background 0.12s, color 0.12s;
 }
-.ap-tab:hover  { color: var(--text-primary); }
-.ap-tab.active { color: var(--accent-blue); border-bottom-color: var(--accent-blue); }
+.sidebar-toggle-btn:hover { background: var(--bg-elevated); color: var(--text-primary); }
 
-.ap-tab-count {
+/* ── Connection status ─────────────────────────────────────────────────────── */
+.sidebar-status {
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.sidebar-status-offline {
+  font-size: 10px;
+  color: var(--text-dim);
+}
+
+/* ── Icon-only tabs (sidebar closed) ──────────────────────────────────────── */
+.sidebar-icon-tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 0;
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  width: 100%;
+  position: relative;
+  gap: 2px;
+}
+.sidebar-icon-tab:hover { background: var(--bg-elevated); }
+
+.sidebar-icon-tab-icon { font-size: 16px; }
+
+.sidebar-icon-tab-count {
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--accent-blue);
+  background: rgba(74,158,255,0.15);
+  border-radius: 6px;
+  padding: 0 4px;
+  line-height: 14px;
+}
+
+/* ── Group header ──────────────────────────────────────────────────────────── */
+.sidebar-group {
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.sidebar-group-hdr {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 10px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 600;
+  text-align: left;
+  transition: background 0.1s;
+}
+.sidebar-group-hdr:hover { background: var(--bg-elevated); color: var(--text-primary); }
+
+.sg-icon  { font-size: 13px; }
+.sg-label { flex: 1; letter-spacing: 0.3px; text-transform: uppercase; font-size: 10px; }
+.sg-count {
+  font-size: 9px;
   background: var(--bg-elevated);
+  color: var(--text-dim);
   border-radius: 8px;
   padding: 0 5px;
-  font-size: 9px;
-  color: var(--text-dim);
-}
-.ap-tab.active .ap-tab-count { background: rgba(74,158,255,0.2); color: var(--accent-blue); }
-
-.ap-source-badge { margin-left: auto; }
-
-/* ── Grid ──────────────────────────────────────────────────────────────────── */
-.ap-grid {
-  flex: 1;
-  overflow-y: auto;
-  overflow-x: hidden;
-  padding: 8px 10px;
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-  gap: 5px;
-  align-content: start;
-}
-
-.ap-empty {
-  font-size: 11px;
-  color: var(--text-dim);
-  grid-column: 1 / -1;
-  padding: 20px;
+  min-width: 16px;
   text-align: center;
+}
+.sg-chevron { font-size: 13px; color: var(--text-dim); width: 14px; text-align: center; }
+
+/* ── Group body (scrollable asset list) ────────────────────────────────────── */
+.sidebar-group-body {
+  max-height: 300px;
+  overflow-y: auto;
+  padding: 4px 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.sidebar-empty {
+  font-size: 10px;
+  color: var(--text-dim);
+  padding: 10px 4px;
+  text-align: center;
+  display: block;
 }

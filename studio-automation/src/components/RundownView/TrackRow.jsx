@@ -123,10 +123,20 @@ export default function TrackRow({ track, isPhantom }) {
         onScroll={handleScroll}
         onDragOver={(e) => { e.preventDefault(); setDropOver(true); }}
         onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setDropOver(false); }}
-        onDrop={(e) => handleDrop(e, track.assets.length - 1)}
+        onDrop={(e) => handleDrop(e, null)}
       >
         {track.assets.length === 0 && (
           <span className="track-empty-hint">Drag assets here</span>
+        )}
+
+        {/* Drop zone before first asset */}
+        {track.assets.length > 0 && (
+          <div
+            className="track-start-drop"
+            onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
+            onDrop={(e) => { e.stopPropagation(); handleDrop(e, -1); }}
+            title="Drop here to insert at beginning"
+          />
         )}
 
         {track.assets.map((asset, idx) => {
@@ -141,7 +151,7 @@ export default function TrackRow({ track, isPhantom }) {
                 isActive={isActive}
                 playheadPct={playheadPct}
               />
-              {/* Gap marker — also a drop target and transition picker */}
+              {/* Gap marker between assets — drop target and transition picker */}
               {idx < track.assets.length - 1 && (
                 <GapMarker
                   trackId={track.id}
@@ -153,12 +163,12 @@ export default function TrackRow({ track, isPhantom }) {
           );
         })}
 
-        {/* Trailing drop zone */}
+        {/* Trailing drop zone — append after last asset */}
         {track.assets.length > 0 && (
           <div
             className="track-end-drop"
             onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
-            onDrop={(e) => { e.stopPropagation(); handleDrop(e, track.assets.length - 1); }}
+            onDrop={(e) => { e.stopPropagation(); handleDrop(e, null); }}
           />
         )}
       </div>

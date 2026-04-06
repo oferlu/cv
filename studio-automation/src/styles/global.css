@@ -2,11 +2,11 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --bg-primary:   #0d0d1a;
-  --bg-panel:     #16213e;
-  --bg-surface:   #1a1a2e;
-  --bg-elevated:  #1f2b4a;
-  --border:       #2a3a5c;
+  --bg-primary:   #111113;
+  --bg-panel:     #1a1a1c;
+  --bg-surface:   #1e1e20;
+  --bg-elevated:  #252527;
+  --border:       #333338;
 
   --accent-blue:  #4a9eff;
   --accent-green: #00d4aa;
@@ -15,8 +15,8 @@
   --accent-purple:#9b59b6;
 
   --text-primary: #e8eaf0;
-  --text-muted:   #8899bb;
-  --text-dim:     #4a5568;
+  --text-muted:   #8a8a96;
+  --text-dim:     #4a4a52;
 
   --track-intro:  #2980b9;
   --track-main:   #27ae60;

@@ -110,9 +110,44 @@ export function usePlayback() {
     }, TICK_MS);
   }, [stopTimer]); // eslint-disable-line
 
-  const playTrack = useCallback((trackId) => {
-    const { tracks } = useStore.getState();
+  /**
+   * Cue the first asset of a track — prepares vMix without starting the timer.
+   * - Clip: restart + pause on first frame, send to PGM.
+   * - Camera/live: send to PGM.
+   * - Next asset placed in Preview after previewDelay.
+   */
+  const cueTrack = useCallback((trackId) => {
+    const { tracks, settings, setCued } = useStore.getState();
     const track = tracks.find((t) => t.id === trackId);
+    const first = track?.assets[0];
+    if (!first) return;
+
+    setCued(true);
+
+    if (window.studioAPI?.vmix && first.vmixKey) {
+      if (first.listIndex !== undefined) {
+        window.studioAPI.vmix.send(`SelectIndex&Value=${first.listIndex}&Input=${first.vmixKey}`);
+      }
+      if (first.assetType === 'clip') {
+        window.studioAPI.vmix.send(`Restart&Input=${first.vmixKey}`);
+        window.studioAPI.vmix.send(`Pause&Input=${first.vmixKey}`);
+      }
+      window.studioAPI.vmix.send(`ActiveInput&Input=${first.vmixKey}`);
+
+      const second = track.assets[1];
+      if (second?.vmixKey) {
+        setTimeout(
+          () => window.studioAPI.vmix.send(`PreviewInput&Input=${second.vmixKey}`),
+          settings.previewDelay,
+        );
+      }
+    }
+  }, []); // eslint-disable-line
+
+  const playTrack = useCallback((trackId) => {
+    const { tracks, setCued } = useStore.getState();
+    const track = tracks.find((t) => t.id === trackId);
+    setCued(false);
     if (track?.assets.length) startAsset(trackId, 0);
   }, [startAsset]);
 
@@ -131,6 +166,7 @@ export function usePlayback() {
 
   const stop = useCallback(() => {
     stopTimer();
+    useStore.getState().setCued(false);
     useStore.getState().setPlayback({
       playing: false, pausedBetween: false, trackDone: false, elapsedMs: 0,
     });
@@ -150,5 +186,5 @@ export function usePlayback() {
 
   useEffect(() => () => stopTimer(), [stopTimer]);
 
-  return { playTrack, startAsset, continueNext, stop };
+  return { playTrack, cueTrack, startAsset, continueNext, stop };
 }

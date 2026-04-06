@@ -82,5 +82,4 @@
   pointer-events: none;
 }
 .ruler-tick.major .ruler-label-text { color: var(--text-muted); font-size: 10px; }
-.ruler-tick.minor .ruler-label-text { display: none; }
-.ruler-tick.major .ruler-label-text { display: block; }
+.ruler-tick.minor .ruler-label-text { display: block; font-size: 8px; }

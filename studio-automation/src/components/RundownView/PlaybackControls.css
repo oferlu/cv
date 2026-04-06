@@ -26,6 +26,8 @@
 .pb-btn:disabled { opacity: 0.3; cursor: default; }
 .pb-btn:not(:disabled):hover { filter: brightness(1.2); }
 
+.pb-cue          { border-color: var(--accent-amber); color: var(--accent-amber); }
+.pb-cue.active   { background: var(--accent-amber); color: #000; }
 .pb-play         { border-color: var(--accent-green); color: var(--accent-green); }
 .pb-play.active  { background: var(--accent-green); color: #000; }
 .pb-play.continue { background: var(--accent-amber); border-color: var(--accent-amber); color: #000; }
@@ -50,16 +52,37 @@
 }
 .pb-status--play  { background: var(--accent-green); color: #000; }
 .pb-status--pause { background: var(--accent-amber); color: #000; }
+.pb-status--cued  { background: var(--accent-amber); color: #000; opacity: 0.7; }
 .pb-status--idle  { background: var(--bg-elevated);  color: var(--text-dim); }
 
 .pb-asset-name {
   font-size: 12px;
-  color: var(--text-muted);
+  font-weight: 600;
+  color: var(--text-primary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 260px;
+  max-width: 220px;
 }
+
+.pb-dur {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.pb-countdown {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+  white-space: nowrap;
+  min-width: 52px;
+  text-align: right;
+}
+.pb-countdown.last10 { color: var(--accent-red); }
+.pb-countdown.last5  { animation: blink 1s step-end infinite; color: var(--accent-red); }
 
 .pb-timer {
   font-family: var(--font-mono);

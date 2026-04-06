@@ -14,10 +14,12 @@ export default function App() {
   return (
     <div className="app-layout">
       <TopBar />
-      <main className="app-body">
-        {view === 'rundown' ? <RundownView /> : <ScriptView />}
+      <div className="app-body">
         <AssetsPanel />
-      </main>
+        <main className="app-main">
+          {view === 'rundown' ? <RundownView /> : <ScriptView />}
+        </main>
+      </div>
     </div>
   );
 }

@@ -41,12 +41,14 @@ export const useStore = create((set) => ({
     tracks: s.tracks.filter((t) => t.id !== id),
   })),
 
-  addAssetToTrack: (trackId, assetData, insertAfterIdx = -1) => set((s) => ({
+  addAssetToTrack: (trackId, assetData, insertAfterIdx = null) => set((s) => ({
     tracks: s.tracks.map((t) => {
       if (t.id !== trackId) return t;
       const asset = { ...assetData, id: uid() };
       const assets = [...t.assets];
-      insertAfterIdx >= 0 ? assets.splice(insertAfterIdx + 1, 0, asset) : assets.push(asset);
+      if (insertAfterIdx === null)    assets.push(asset);           // append
+      else if (insertAfterIdx < 0)   assets.unshift(asset);        // insert at beginning
+      else                           assets.splice(insertAfterIdx + 1, 0, asset); // insert after idx
       return { ...t, assets };
     }),
   })),
@@ -114,6 +116,10 @@ export const useStore = create((set) => ({
     });
     return { tracks };
   }),
+
+  // ── Cued ─────────────────────────────────────────────────────────────────
+  cued: false,
+  setCued: (cued) => set({ cued }),
 
   // ── Playback ──────────────────────────────────────────────────────────────
   playback: {
