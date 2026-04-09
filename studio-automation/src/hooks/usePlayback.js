@@ -3,8 +3,52 @@ import { useStore } from '../store';
 
 const TICK_MS = 100;
 
+/**
+ * Find the next asset to play after (trackId, assetIdx).
+ * Looks first in the same track, then in subsequent non-empty tracks.
+ * Returns { trackId, assetIdx, asset } or null if nothing follows.
+ */
+function findNextAsset(tracks, trackId, assetIdx) {
+  const trackIdx = tracks.findIndex((t) => t.id === trackId);
+  if (trackIdx < 0) return null;
+
+  // Next asset in the same track
+  const track = tracks[trackIdx];
+  if (track.assets[assetIdx + 1]) {
+    return { trackId: track.id, assetIdx: assetIdx + 1, asset: track.assets[assetIdx + 1] };
+  }
+
+  // First asset of the next non-empty track
+  for (let i = trackIdx + 1; i < tracks.length; i++) {
+    if (tracks[i].assets.length > 0) {
+      return { trackId: tracks[i].id, assetIdx: 0, asset: tracks[i].assets[0] };
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Send vMix commands to cue an asset into Preview:
+ *  - For list items: SelectIndex first
+ *  - For clips:      Restart + Pause (freeze on first frame)
+ *  - All assets:     PreviewInput
+ */
+function sendCueToPreview(asset) {
+  if (!window.studioAPI?.vmix || !asset?.vmixKey) return;
+  const api = window.studioAPI.vmix;
+  if (asset.listIndex !== undefined) {
+    api.send(`SelectIndex&Value=${asset.listIndex}&Input=${asset.vmixKey}`);
+  }
+  if (asset.assetType === 'clip') {
+    api.send(`Restart&Input=${asset.vmixKey}`);
+    api.send(`Pause&Input=${asset.vmixKey}`);
+  }
+  api.send(`PreviewInput&Input=${asset.vmixKey}`);
+}
+
 export function usePlayback() {
-  const timerRef  = useRef(null);
+  const timerRef   = useRef(null);
   const elapsedRef = useRef(0);
 
   const stopTimer = useCallback(() => {
@@ -12,106 +56,99 @@ export function usePlayback() {
     timerRef.current = null;
   }, []);
 
-  /**
-   * Start playing an asset.
-   * opts.skipPGM = true → vMix transition was already sent by the caller
-   *                        (auto-transition case); don't re-send ActiveInput.
-   */
+  // ── startAsset ─────────────────────────────────────────────────────────────
   const startAsset = useCallback((trackId, assetIdx, opts = {}) => {
     stopTimer();
     elapsedRef.current = 0;
 
-    const { tracks, settings, setPlayback } = useStore.getState();
+    const { tracks, settings, setPlayback, setCuedAsset } = useStore.getState();
     const track = tracks.find((t) => t.id === trackId);
     const asset = track?.assets[assetIdx];
     if (!asset) return;
 
+    // This asset is now playing — clear cued state (will be re-set after previewDelay)
+    setCuedAsset(null);
+
     setPlayback({
-      activeTrackId: trackId,
+      activeTrackId:  trackId,
       activeAssetIdx: assetIdx,
-      playing: true,
-      pausedBetween: false,
-      trackDone: false,
-      elapsedMs: 0,
+      playing:        true,
+      pausedBetween:  false,
+      trackDone:      false,
+      elapsedMs:      0,
     });
 
-    // ── vMix commands ────────────────────────────────────────────────────────
+    // ── vMix PGM commands ──────────────────────────────────────────────────
     if (window.studioAPI?.vmix && asset.vmixKey) {
-      // For list items: select the specific index in the list first
       if (asset.listIndex !== undefined) {
-        window.studioAPI.vmix.send(`SelectIndex&Value=${asset.listIndex}&Input=${asset.vmixKey}`);
+        window.studioAPI.vmix.send(
+          `SelectIndex&Value=${asset.listIndex}&Input=${asset.vmixKey}`,
+        );
       }
-
       if (!opts.skipPGM) {
-        // Direct cut to PGM (no transition — manual continue or first asset)
         window.studioAPI.vmix.send(`ActiveInput&Input=${asset.vmixKey}`);
       }
-
-      // For video clips (and list items): send Play so vMix starts the clip
       if (asset.assetType === 'clip') {
         const playDelay = opts.skipPGM ? (asset.transitionDuration || 0) : 0;
         setTimeout(
           () => window.studioAPI.vmix.send(`Play&Input=${asset.vmixKey}`),
-          playDelay
+          playDelay,
         );
-      }
-
-      // Prepare next asset: restart clip to first frame + freeze + route to Preview
-      const nextAsset = track.assets[assetIdx + 1];
-      if (nextAsset?.vmixKey) {
-        setTimeout(() => {
-          const api = window.studioAPI.vmix;
-          // For list items, select the right index first
-          if (nextAsset.listIndex !== undefined) {
-            api.send(`SelectIndex&Value=${nextAsset.listIndex}&Input=${nextAsset.vmixKey}`);
-          }
-          // Clips: rewind to first frame and freeze so Preview shows the opening frame
-          if (nextAsset.assetType === 'clip') {
-            api.send(`Restart&Input=${nextAsset.vmixKey}`);
-            api.send(`Pause&Input=${nextAsset.vmixKey}`);
-          }
-          api.send(`PreviewInput&Input=${nextAsset.vmixKey}`);
-        }, settings.previewDelay);
       }
     }
 
-    // ── Tick every 100ms ─────────────────────────────────────────────────────
+    // ── Schedule Preview cue for the next asset (across tracks) ────────────
+    setTimeout(() => {
+      const { tracks: t, setCuedAsset: sca } = useStore.getState();
+      const next = findNextAsset(t, trackId, assetIdx);
+      if (!next) return;
+      sendCueToPreview(next.asset);
+      sca({ trackId: next.trackId, assetIdx: next.assetIdx });
+    }, settings.previewDelay);
+
+    // ── 100ms tick ────────────────────────────────────────────────────────
     timerRef.current = setInterval(() => {
       elapsedRef.current += TICK_MS;
 
-      const { tracks: currentTracks, setPlayback: sp } = useStore.getState();
-      const currentTrack  = currentTracks.find((t) => t.id === trackId);
+      const { tracks: ct, setPlayback: sp, setCuedAsset: sca } = useStore.getState();
+      const currentTrack  = ct.find((t) => t.id === trackId);
       const assetDuration = currentTrack?.assets[assetIdx]?.durationMs ?? 0;
 
       if (elapsedRef.current >= assetDuration) {
         stopTimer();
         elapsedRef.current = assetDuration;
 
-        const nextAsset = currentTrack?.assets[assetIdx + 1];
-        const isLast    = !nextAsset;
+        const nextInTrack = currentTrack?.assets[assetIdx + 1];
+        const isLastInTrack = !nextInTrack;
 
-        if (!isLast && nextAsset.transition) {
-          // ── Auto-transition to next asset ──────────────────────────────────
-          const dur = nextAsset.transitionDuration ?? 500;
-          const cmd = nextAsset.transition === 'Cut'
-            ? `Cut&Input=${nextAsset.vmixKey}`
-            : `${nextAsset.transition}&Input=${nextAsset.vmixKey}&Duration=${dur}`;
+        if (!isLastInTrack && nextInTrack.transition) {
+          // ── Auto-transition to next asset in same track ──────────────────
+          const dur = nextInTrack.transitionDuration ?? 500;
+          const cmd = nextInTrack.transition === 'Cut'
+            ? `Cut&Input=${nextInTrack.vmixKey}`
+            : `${nextInTrack.transition}&Input=${nextInTrack.vmixKey}&Duration=${dur}`;
 
-          if (window.studioAPI?.vmix && nextAsset.vmixKey) {
+          if (window.studioAPI?.vmix && nextInTrack.vmixKey) {
             window.studioAPI.vmix.send(cmd);
           }
 
-          // Keep "playing" visually during the transition, then start next asset
           sp({ elapsedMs: assetDuration, playing: true });
           setTimeout(() => startAsset(trackId, assetIdx + 1, { skipPGM: true }), dur);
         } else {
-          // Pause and wait for manual Continue
+          // ── Pause and wait for operator Continue ─────────────────────────
+          // Determine if there is anything left to play at all (same or other tracks)
+          const hasMore = !!findNextAsset(ct, trackId, assetIdx);
           sp({
-            elapsedMs: assetDuration,
-            playing: false,
-            pausedBetween: !isLast,
-            trackDone: isLast,
+            elapsedMs:      assetDuration,
+            playing:        false,
+            pausedBetween:  !isLastInTrack,          // gap within track
+            trackDone:      isLastInTrack && hasMore, // end of track, more tracks remain
+            elapsedMs:      assetDuration,
           });
+
+          // If this track is done but there are more tracks, keep the cued
+          // state pointing at the first asset of the next track (already set
+          // by the previewDelay timeout above) — no further action needed.
         }
       } else {
         sp({ elapsedMs: elapsedRef.current });
@@ -119,23 +156,27 @@ export function usePlayback() {
     }, TICK_MS);
   }, [stopTimer]); // eslint-disable-line
 
+  // ── cueTrack ───────────────────────────────────────────────────────────────
   /**
-   * Cue the first asset of a track — prepares vMix without starting the timer.
-   * - Clip: restart + pause on first frame, send to PGM.
-   * - Camera/live: send to PGM.
-   * - Next asset placed in Preview after previewDelay.
+   * Prepare the first asset of a track for playback:
+   *  - Clip:  Restart + Pause (frozen on first frame) → ActiveInput (to PGM)
+   *  - Live:  ActiveInput (to PGM)
+   * After previewDelay, the SECOND asset is cued into Preview.
    */
   const cueTrack = useCallback((trackId) => {
-    const { tracks, settings, setCued } = useStore.getState();
+    const { tracks, settings, setCuedAsset } = useStore.getState();
     const track = tracks.find((t) => t.id === trackId);
     const first = track?.assets[0];
     if (!first) return;
 
-    setCued(true);
+    // Mark first asset as cued (green border, in PGM frozen)
+    setCuedAsset({ trackId, assetIdx: 0 });
 
     if (window.studioAPI?.vmix && first.vmixKey) {
       if (first.listIndex !== undefined) {
-        window.studioAPI.vmix.send(`SelectIndex&Value=${first.listIndex}&Input=${first.vmixKey}`);
+        window.studioAPI.vmix.send(
+          `SelectIndex&Value=${first.listIndex}&Input=${first.vmixKey}`,
+        );
       }
       if (first.assetType === 'clip') {
         window.studioAPI.vmix.send(`Restart&Input=${first.vmixKey}`);
@@ -143,42 +184,44 @@ export function usePlayback() {
       }
       window.studioAPI.vmix.send(`ActiveInput&Input=${first.vmixKey}`);
 
-      const second = track.assets[1];
-      if (second?.vmixKey) {
-        setTimeout(
-          () => window.studioAPI.vmix.send(`PreviewInput&Input=${second.vmixKey}`),
-          settings.previewDelay,
-        );
-      }
+      // Cue second asset into Preview after delay
+      setTimeout(() => {
+        const { tracks: t, setCuedAsset: sca } = useStore.getState();
+        const second = findNextAsset(t, trackId, 0);
+        if (!second) return;
+        sendCueToPreview(second.asset);
+        sca({ trackId: second.trackId, assetIdx: second.assetIdx });
+      }, settings.previewDelay);
     }
   }, []); // eslint-disable-line
 
+  // ── playTrack ──────────────────────────────────────────────────────────────
   const playTrack = useCallback((trackId) => {
-    const { tracks, setCued } = useStore.getState();
+    const { tracks } = useStore.getState();
     const track = tracks.find((t) => t.id === trackId);
-    setCued(false);
     if (track?.assets.length) startAsset(trackId, 0);
   }, [startAsset]);
 
+  // ── continueNext ──────────────────────────────────────────────────────────
   const continueNext = useCallback(() => {
     const { playback, tracks } = useStore.getState();
-    const { activeTrackId, activeAssetIdx, trackDone } = playback;
+    const { activeTrackId, activeAssetIdx, trackDone, pausedBetween } = playback;
 
     if (trackDone) {
-      const ti   = tracks.findIndex((t) => t.id === activeTrackId);
-      const next = tracks.slice(ti + 1).find((t) => t.assets.length > 0);
-      if (next) startAsset(next.id, 0);
-    } else {
+      // Move to first asset of next non-empty track
+      const next = findNextAsset(tracks, activeTrackId, activeAssetIdx);
+      if (next) startAsset(next.trackId, next.assetIdx);
+    } else if (pausedBetween) {
       startAsset(activeTrackId, activeAssetIdx + 1);
     }
   }, [startAsset]);
 
+  // ── stop ──────────────────────────────────────────────────────────────────
   const stop = useCallback(() => {
     stopTimer();
-    useStore.getState().setCued(false);
-    useStore.getState().setPlayback({
-      playing: false, pausedBetween: false, trackDone: false, elapsedMs: 0,
-    });
+    const { setCuedAsset, setPlayback } = useStore.getState();
+    setCuedAsset(null);
+    setPlayback({ playing: false, pausedBetween: false, trackDone: false, elapsedMs: 0 });
   }, [stopTimer]);
 
   // Global Enter → Continue

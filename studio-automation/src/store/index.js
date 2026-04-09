@@ -119,9 +119,15 @@ export const useStore = create((set) => ({
     return { tracks };
   }),
 
-  // ── Cued ─────────────────────────────────────────────────────────────────
-  cued: false,
-  setCued: (cued) => set({ cued }),
+  // ── Cued asset — { trackId, assetIdx } | null ────────────────────────────
+  // Green border: frozen at first frame, waiting in Preview (or PGM before play)
+  cuedAsset: null,
+  setCuedAsset: (cuedAsset) => set({ cuedAsset }),
+
+  // ── Selected asset — assetId | null ──────────────────────────────────────
+  // Light-blue border: operator clicked on this asset
+  selectedAssetId: null,
+  setSelectedAsset: (id) => set({ selectedAssetId: id }),
 
   // ── Playback ──────────────────────────────────────────────────────────────
   playback: {

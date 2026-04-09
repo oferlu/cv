@@ -6,7 +6,7 @@ import './TrackRow.css';
 
 export default function TrackRow({ track, isPhantom }) {
   const {
-    zoom, playback,
+    zoom, playback, cuedAsset, selectedAssetId,
     addAssetToTrack, renameTrack, removeTrack, moveAsset, settings,
     rulerScrollLeft, setRulerScrollLeft,
   } = useStore();
@@ -140,8 +140,11 @@ export default function TrackRow({ track, isPhantom }) {
         )}
 
         {track.assets.map((asset, idx) => {
-          const isActive   = isActiveTrack && playback.activeAssetIdx === idx;
-          const playheadPct = isActive ? playback.elapsedMs / asset.durationMs : 0;
+          const isActive    = isActiveTrack && playback.activeAssetIdx === idx;
+          const isCued      = cuedAsset?.trackId === track.id && cuedAsset?.assetIdx === idx;
+          const isSelected  = selectedAssetId === asset.id;
+          const playheadPct = isActive && asset.durationMs > 0
+            ? playback.elapsedMs / asset.durationMs : 0;
 
           return (
             <React.Fragment key={asset.id}>
@@ -149,6 +152,8 @@ export default function TrackRow({ track, isPhantom }) {
                 asset={asset}
                 trackId={track.id}
                 isActive={isActive}
+                isCued={isCued}
+                isSelected={isSelected}
                 playheadPct={playheadPct}
               />
               {/* Gap marker between assets — drop target and transition picker */}

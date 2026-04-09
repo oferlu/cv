@@ -11,7 +11,8 @@ function fmtMs(ms) {
 }
 
 export default function PlaybackControls() {
-  const { playback, cued, tracks } = useStore();
+  const { playback, cuedAsset, tracks } = useStore();
+  const cued = !!cuedAsset;
   const { cueTrack, playTrack, continueNext, stop } = usePlayback();
 
   const { playing, pausedBetween, trackDone, activeTrackId, activeAssetIdx, elapsedMs } = playback;

@@ -18,8 +18,8 @@ function fmtMs(ms) {
   return s >= 60 ? `${Math.floor(s / 60)}m${Math.round(s % 60)}s` : `${s.toFixed(1)}s`;
 }
 
-export default function AssetBlock({ asset, trackId, isActive, playheadPct }) {
-  const { zoom, removeAssetFromTrack, updateAssetDuration } = useStore();
+export default function AssetBlock({ asset, trackId, isActive, isCued, isSelected, playheadPct }) {
+  const { zoom, removeAssetFromTrack, updateAssetDuration, setSelectedAsset } = useStore();
   const width = Math.max(ASSET_MIN_PX, (asset.durationMs / 1000) * zoom);
 
   // ── Drag to reorder ────────────────────────────────────────────────────────
@@ -62,12 +62,16 @@ export default function AssetBlock({ asset, trackId, isActive, playheadPct }) {
     document.addEventListener('mouseup',   onUp);
   };
 
+  // Border priority: playing (yellow) > cued (green) > selected (blue)
+  const stateClass = isActive ? 'is-active' : isCued ? 'is-cued' : isSelected ? 'is-selected' : '';
+
   return (
     <div
-      className={`asset-block ${isActive ? 'is-active' : ''}`}
+      className={`asset-block ${stateClass}`}
       style={{ width, background: TYPE_COLOR[asset.assetType] || 'var(--track-main)' }}
       draggable
       onDragStart={onDragStart}
+      onClick={() => setSelectedAsset(asset.id)}
     >
       {/* Playhead inside active asset */}
       {isActive && (
