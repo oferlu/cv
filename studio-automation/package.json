@@ -16,8 +16,7 @@
   "dependencies": {
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "zustand": "^4.5.0",
-    "net": "^1.0.2"
+    "zustand": "^4.5.0"
   },
   "devDependencies": {
     "react-scripts": "5.0.1",
@@ -35,20 +34,18 @@
     "files": [
       "build/**/*",
       "electron/**/*",
-      "node_modules/**/*"
+      "package.json"
     ],
+    "extraMetadata": {
+      "main": "electron/main.js"
+    },
     "win": {
-      "target": ["nsis", "portable"],
-      "icon": "assets/icon.ico"
+      "target": ["nsis", "portable"]
     },
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true
-    },
-    "mac": {
-      "target": "dmg",
-      "icon": "assets/icon.icns"
     }
   },
   "eslintConfig": {
