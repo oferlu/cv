@@ -62,17 +62,31 @@ export function parseVmixXML(xml) {
           const shortName = rawPath.split(/[\\/]/).pop(); // basename only
           if (!shortName) continue; // skip empty entries
 
+          // Duration: prefer the item's own 'duration' attribute (populated by
+          // modern vMix after the file has been scanned/selected at least once).
+          // For the currently-selected item the parent input's 'duration' is
+          // guaranteed correct.  Other un-scanned items start at 0 and are
+          // filled in by the background fetchListDurations pass in useVmixSync.
+          const itemDurMs  = parseInt(item.getAttribute('duration'), 10);
+          const isSelected = item.getAttribute('selected') === 'True'
+                          || item.getAttribute('selected') === 'true'
+                          || item.getAttribute('selected') === '1';
+          const durationMs = itemDurMs > 0 ? itemDurMs
+                           : isSelected   ? parentDurationMs
+                           : 0;
+
           results.push({
             key:        `${inputKey}_item_${j}`,
             number,
             title:      `${title} - ${shortName}`,
             shortTitle: shortName,
             type:       'Video',
-            durationMs: parseInt(item.getAttribute('duration'), 10) || 0,
+            durationMs,
             state:      'Paused',
             isListItem: true,
             listKey:    inputKey,  // parent's number string — used in SelectIndex + ActiveInput
             listIndex:  j,
+            selected:   isSelected,
           });
         }
       }
