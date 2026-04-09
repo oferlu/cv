@@ -38,7 +38,7 @@ function sendCueToPreview(asset) {
   if (!window.studioAPI?.vmix || !asset?.vmixKey) return;
   const api = window.studioAPI.vmix;
   if (asset.listIndex !== undefined) {
-    api.send(`SelectIndex&Value=${asset.listIndex}&Input=${asset.vmixKey}`);
+    api.send(`SelectIndex&Value=${asset.listIndex + 1}&Input=${asset.vmixKey}`);
   }
   if (asset.assetType === 'clip') {
     api.send(`Restart&Input=${asset.vmixKey}`);
@@ -82,7 +82,7 @@ export function usePlayback() {
     if (window.studioAPI?.vmix && asset.vmixKey) {
       if (asset.listIndex !== undefined) {
         window.studioAPI.vmix.send(
-          `SelectIndex&Value=${asset.listIndex}&Input=${asset.vmixKey}`,
+          `SelectIndex&Value=${asset.listIndex + 1}&Input=${asset.vmixKey}`,
         );
       }
       if (!opts.skipPGM) {
@@ -178,7 +178,7 @@ export function usePlayback() {
     if (window.studioAPI?.vmix && first.vmixKey) {
       if (first.listIndex !== undefined) {
         window.studioAPI.vmix.send(
-          `SelectIndex&Value=${first.listIndex}&Input=${first.vmixKey}`,
+          `SelectIndex&Value=${first.listIndex + 1}&Input=${first.vmixKey}`,
         );
       }
       if (first.assetType === 'clip') {

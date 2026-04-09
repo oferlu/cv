@@ -105,7 +105,7 @@ export function useVmixSync() {
         const origIdx = (items.find((i) => i.selected)?.listIndex) ?? 0;
 
         for (const item of unknownItems) {
-          await api.send(`SelectIndex&Value=${item.listIndex}&Input=${list.key}`);
+          await api.send(`SelectIndex&Value=${item.listIndex + 1}&Input=${list.key}`);
           await new Promise((r) => setTimeout(r, DUR_SETTLE_MS));
 
           const xml = await api.getState();
@@ -119,7 +119,7 @@ export function useVmixSync() {
         }
 
         // Restore original item
-        await api.send(`SelectIndex&Value=${origIdx}&Input=${list.key}`);
+        await api.send(`SelectIndex&Value=${origIdx + 1}&Input=${list.key}`);
       }
 
       // Push updated durations into the store immediately
