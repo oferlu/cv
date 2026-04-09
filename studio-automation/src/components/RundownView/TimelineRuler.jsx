@@ -51,13 +51,13 @@ export default function TimelineRuler() {
     return () => el.removeEventListener('wheel', handleWheel);
   }, [handleWheel]);
 
-  // Total ruler width = longest track + padding
-  const maxSec = Math.max(
-    60,
-    ...tracks.map((t) =>
-      t.assets.reduce((sum, a) => sum + a.durationMs / 1000, 0) + t.assets.length * (GAP_PX / zoom)
-    )
-  ) + 30;
+  // Total ruler width = longest track + at least 5 min padding
+  const trackMax = tracks.length > 0
+    ? Math.max(0, ...tracks.map((t) =>
+        t.assets.reduce((sum, a) => sum + a.durationMs / 1000, 0) + t.assets.length * (GAP_PX / zoom)
+      ))
+    : 0;
+  const maxSec = Math.max(300, trackMax + 300);
 
   const interval   = tickInterval(zoom);
   const totalPx    = maxSec * zoom;

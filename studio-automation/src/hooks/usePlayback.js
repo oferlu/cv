@@ -114,7 +114,7 @@ export function usePlayback() {
       const currentTrack  = ct.find((t) => t.id === trackId);
       const assetDuration = currentTrack?.assets[assetIdx]?.durationMs ?? 0;
 
-      if (elapsedRef.current >= assetDuration) {
+      if (assetDuration > 0 && elapsedRef.current >= assetDuration) {
         stopTimer();
         elapsedRef.current = assetDuration;
 
@@ -224,12 +224,24 @@ export function usePlayback() {
     setPlayback({ playing: false, pausedBetween: false, trackDone: false, elapsedMs: 0 });
   }, [stopTimer]);
 
-  // Global Enter → Continue
+  // Global keyboard shortcuts
   useEffect(() => {
     const handler = (e) => {
-      if (e.key === 'Enter' && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+      if (e.key === 'Enter') {
         const { playback } = useStore.getState();
         if (playback.pausedBetween || playback.trackDone) continueNext();
+      }
+
+      if (e.key === 'Delete' || e.key === 'Backspace') {
+        const { selectedAssetId, tracks, removeAssetFromTrack, setSelectedAsset } = useStore.getState();
+        if (!selectedAssetId) return;
+        const track = tracks.find((t) => t.assets.some((a) => a.id === selectedAssetId));
+        if (track) {
+          removeAssetFromTrack(track.id, selectedAssetId);
+          setSelectedAsset(null);
+        }
       }
     };
     window.addEventListener('keydown', handler);
