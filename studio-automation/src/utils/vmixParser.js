@@ -68,7 +68,7 @@ export function parseVmixXML(xml) {
             title:      `${title} - ${shortName}`,
             shortTitle: shortName,
             type:       'Video',
-            durationMs: parseInt(item.getAttribute('duration'), 10) || parentDurationMs,
+            durationMs: parseInt(item.getAttribute('duration'), 10) || 0,
             state:      'Paused',
             isListItem: true,
             listKey:    inputKey,  // parent's number string — used in SelectIndex + ActiveInput

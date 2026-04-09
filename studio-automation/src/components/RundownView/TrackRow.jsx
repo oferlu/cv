@@ -62,7 +62,9 @@ export default function TrackRow({ track, isPhantom }) {
     const newRaw = e.dataTransfer.getData('application/studio-asset');
     if (newRaw) {
       const assetData = JSON.parse(newRaw);
-      if (assetData.assetType === 'camera' || assetData.durationMs === 0) {
+      // Only live camera sources get the default camera duration.
+      // Clips keep their own duration (or 0 = unknown/live).
+      if (assetData.assetType === 'camera') {
         assetData.durationMs = settings.cameraDuration;
       }
       addAssetToTrack(track.id, assetData, insertAfterIdx);

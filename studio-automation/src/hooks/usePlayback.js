@@ -136,19 +136,22 @@ export function usePlayback() {
           setTimeout(() => startAsset(trackId, assetIdx + 1, { skipPGM: true }), dur);
         } else {
           // ── Pause and wait for operator Continue ─────────────────────────
-          // Determine if there is anything left to play at all (same or other tracks)
-          const hasMore = !!findNextAsset(ct, trackId, assetIdx);
+          const next    = findNextAsset(ct, trackId, assetIdx);
+          const hasMore = !!next;
           sp({
-            elapsedMs:      assetDuration,
-            playing:        false,
-            pausedBetween:  !isLastInTrack,          // gap within track
-            trackDone:      isLastInTrack && hasMore, // end of track, more tracks remain
-            elapsedMs:      assetDuration,
+            elapsedMs:     assetDuration,
+            playing:       false,
+            pausedBetween: !isLastInTrack,           // gap within same track
+            trackDone:     isLastInTrack && hasMore, // end of track, more tracks remain
           });
 
-          // If this track is done but there are more tracks, keep the cued
-          // state pointing at the first asset of the next track (already set
-          // by the previewDelay timeout above) — no further action needed.
+          // When track ends, ensure the first asset of the next track is cued
+          // in Preview immediately (previewDelay timeout may not have fired yet
+          // if the clip was shorter than previewDelay).
+          if (isLastInTrack && next) {
+            sendCueToPreview(next.asset);
+            sca({ trackId: next.trackId, assetIdx: next.assetIdx });
+          }
         }
       } else {
         sp({ elapsedMs: elapsedRef.current });
